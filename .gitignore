@@ -1,0 +1,17 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# Node
+node_modules/
+dist/
+build/
+
+# Editor és OS fájlok
+.DS_Store
+*.log
+*.swp
+*.swo
+.idea/
+.vscode/
