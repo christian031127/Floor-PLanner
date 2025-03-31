@@ -1,0 +1,217 @@
+/* Navbar alapstílus */
+.navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #222;
+  padding: 15px 30px;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+  position: relative;
+}
+
+/* Logó (bal oldal) */
+.nav-left {
+  flex: 1; /* Egyenletesen osztja el a helyet */
+}
+
+/* Logó (bal oldal) */
+.nav-left .logo {
+  color: white;
+  font-size: 1.8rem;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+/* Középső navigáció */
+.nav-center {
+  flex: 2;
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+}
+
+.nav-center a {
+  color: white;
+  text-decoration: none;
+  font-size: 1.2rem;
+  transition: color 0.3s ease-in-out;
+  padding: 10px 15px;
+}
+
+.nav-center a:hover {
+  color: #f39c12;
+}
+
+/* Jobb oldali login gomb */
+.nav-right {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+/* Login / Sign Up gomb */
+.login-button {
+  padding: 10px 20px;
+  background: white;
+  color: black;
+  font-weight: 700;
+  border-radius: 20px;
+  border: 2px solid black;
+  cursor: pointer;
+  transition: background 0.3s ease-in-out, color 0.3s ease-in-out;
+}
+
+.login-button:hover {
+  background: black;
+  color: white;
+}
+
+/* Felhasználói menü */
+.user-menu {
+  position: relative;
+  display: inline-block;
+}
+
+.user-button {
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  color: white;
+  display: flex;
+  gap: 8px; /* Helyet ad az ikon és a név között */
+}
+
+.user-icon {
+  font-size: 20px;
+}
+
+/* Dropdown menü */
+.dropdown-menu {
+  position: absolute;
+  right: 0;
+  top: 40px;
+  background: white;
+  border: 1px solid #ccc;
+  box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.2);
+  padding: 10px;
+  border-radius: 5px;
+  display: flex;
+  flex-direction: column;
+  z-index: 100;
+}
+
+.dropdown-menu button {
+  border: none;
+  background: none;
+  padding: 5px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.dropdown-menu button:hover {
+  text-decoration: underline;
+}
+
+/* Logout megerősítő modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 200;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+}
+
+.modal-overlay.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+.modal p {
+  font-size: 15px;
+}
+
+.modal {
+  background: white;
+  padding: 25px;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.4);
+  width: 320px;
+  position: fixed;
+  top: -200px; /* Alapértelmezett hely: a képernyő felett */
+  left: 50%;
+  transform: translate(-50%, 0);
+  transition: top 0.5s ease-in-out, opacity 0.5s ease-in-out;
+  opacity: 0;
+  visibility: hidden;
+}
+
+.modal.slide-in {
+  top: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 1;
+  visibility: visible;
+}
+
+.modal-overlay.show .modal {
+  top: 50%; 
+}
+
+/* Logout modal gombok */
+.modal-buttons {
+  margin-top: 20px;
+  display: flex;
+  justify-content: space-evenly;
+}
+
+.modal-buttons button {
+  padding: 12px 25px;
+  font-size: 16px;
+  cursor: pointer;
+  border: none;
+  background: black;
+  color: white;
+  border-radius: 8px;
+  transition: background 0.3s ease-in-out, transform 0.2s ease-in-out;
+}
+
+.modal-buttons button:hover {
+  background: gray;
+  transform: scale(1.05);
+}
+
+/* Felhasználó gomb (fehér háttér, lekerekített) */
+.styled-user-button {
+  display: flex;
+  align-items: center;
+  background: white;
+  color: black;
+  font-weight: 700;
+  border-radius: 20px;
+  border: 2px solid black;
+  padding: 8px 15px;
+  cursor: pointer;
+  transition: background 0.3s ease-in-out, color 0.3s ease-in-out;
+}
+
+/* Hover effekt a gombra */
+.styled-user-button:hover {
+  background: black;
+  color: white;
+}
+
+/* Felhasználó név a gombban */
+.styled-user-button .username {
+  margin-left: 8px; /* Kis távolság az ikon és a név között */
+  font-size: 16px;
+}

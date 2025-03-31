@@ -1,0 +1,259 @@
+/* Login modal háttér (overlay) */
+.login-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  /* Kevesebb sötétítés */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease-in-out, visibility 0.3s;
+  z-index: 999;
+}
+
+/* Ha nyitva van, akkor látható lesz */
+.login-modal-overlay.open {
+  opacity: 1;
+  visibility: visible;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+/* Ha bezáródik, akkor világosodjon vissza */
+.login-modal-overlay.fade-out {
+  opacity: 0;
+  background: rgba(0, 0, 0, 0);
+  visibility: hidden;
+}
+
+/* A modal (ablak) stílusa */
+.card {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  min-height: 380px;
+  width: 350px;
+  gap: 35px;
+  /* Távolság az elemek között */
+  background: #f9f9f9;
+  box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.2);
+  /* Szép letisztult árnyék */
+  border-radius: 10px;
+  padding: 20px;
+  position: absolute;
+  top: -200px;
+  /* Alapállapot: a képernyő felett van */
+  transition: top 0.5s ease-in-out, opacity 0.5s ease-in-out;
+  opacity: 0;
+  visibility: hidden;
+}
+
+/* Amikor a modal megjelenik, szépen lecsúszik */
+.slide-down {
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 1;
+  visibility: visible;
+}
+
+body.modal-open {
+  background-color: rgba(0, 0, 0, 0.3);
+  transition: background-color 0.5s ease-in-out;
+}
+
+/* Amikor a modal bezáródik, azonnal sötéten tartjuk a hátteret */
+body.fade-back {
+  background-color: rgba(0, 0, 0, 0);
+  transition: background-color 0.5s ease-in-out;
+}
+
+/* Ha nincs modal nyitva, visszaáll a háttér */
+body {
+  transition: background-color 0.5s ease-in-out;
+}
+
+.fade-out {
+  opacity: 0;
+  transform: translateY(-30px); /* Felfelé mozduljon kicsit */
+  transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+}
+
+/* Login cím */
+.login {
+  color: #000;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-weight: bold;
+  font-size: 22px;
+  text-align: center;
+}
+
+/* Input mezők */
+.inputBox {
+  position: relative;
+  width: 90%;
+  margin-bottom: 20px;
+  transition: opacity 0.5s ease-in-out;
+}
+
+/* Bezáráskor felfelé tűnik el */
+.card.fade-out {
+  opacity: 0;
+  transform: translateY(-30px);
+  visibility: hidden;
+  transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out, visibility 0.5s ease-in-out;
+}
+
+/* Ha bezáródik, az inputok is eltűnnek */
+.card.fade-out .inputBox {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.inputBox input {
+  width: 100%;
+  padding: 12px;
+  outline: none;
+  border: 2px solid #000;
+  ;
+  color: #000;
+  font-size: 1em;
+  background: transparent;
+  border-radius: 8px;
+  transition: 0.1s;
+  border-bottom-left-radius: 8px;
+  transition: border 0.3s ease-in-out;
+}
+
+/* Input placeholder stílusa */
+.inputBox span {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-40%);
+  font-size: 12px;
+  color: #666;
+  text-transform: uppercase;
+  transition: 0.5s ease;
+  letter-spacing: 3px;
+  background: #f9f9f9;
+  padding: 0 5px;
+  pointer-events: none;
+}
+
+/* Placeholder animáció */
+.inputBox input:valid~span,
+.inputBox input:focus~span {
+  top: -2px;
+  left: 150px;
+  font-size: 12px;
+  color: #333;
+  background: #000;
+  color: #fff;
+  padding: 3px 7px;
+}
+
+/* Beviteli mező aktív állapot */
+.inputBox input:valid,
+.inputBox input:focus {
+  border: 2px solid #000;
+  border-radius: 8px;
+}
+
+/* Enter gomb */
+.enter {
+  width: 80%;
+  padding: 14px;
+  font-size: 16px;
+  font-weight: bold;
+  background: black;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: center;
+  /* Szöveg középre */
+  transition: background 0.3s ease-in-out;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  /* Szöveg függőlegesen is középre */
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.enter:hover {
+  background: #333;
+}
+
+/* Sign Up link */
+p {
+  text-align: center;
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+p a {
+  color: #6a5acd;
+  font-weight: bold;
+  text-decoration: none;
+}
+
+p a:hover {
+  text-decoration: underline;
+}
+
+/* Bezárás ikon */
+.close-button {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: black;
+}
+
+/* Hiba- és sikerüzenet optimalizálása */
+.error-message, .success-message {
+  text-align: center;
+  font-size: 14px;
+  font-weight: bold;
+  padding: 8px;
+  margin-bottom: 0px;
+  margin-top: -25px; 
+  width: 90%;
+  border-radius: 5px;
+}
+
+.error-message {
+  color: #ff4d4d;
+  background-color: #ffe6e6;
+  border: 1px solid #ff4d4d;
+}
+
+.success-message {
+  color: #28a745;
+  background-color: #e6ffe6;
+  border: 1px solid #28a745;
+}
+
+/* Login gomb (switch-button) */
+.switch-button {
+  background: none;
+  border: none;
+  color: #007bff; /* Kék szín */
+  font-weight: bold;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.switch-button:hover {
+  text-decoration: underline; /* Hover-re aláhúzás */
+}

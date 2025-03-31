@@ -1,0 +1,17 @@
+.plan-container {
+    display: flex;
+    height: 100vh;
+  }
+  
+  .tool-panel {
+    width: 250px;
+    background: #f4f4f4;
+    padding: 20px;
+    border-right: 2px solid #ddd;
+  }
+  
+  .canvas-container {
+    flex-grow: 1;
+    position: relative;
+  }
+  

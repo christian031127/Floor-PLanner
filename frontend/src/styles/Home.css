@@ -1,0 +1,160 @@
+body,
+html {
+    overflow-x: hidden;
+}
+
+.home-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 50px 0;
+    min-height: 100vh;
+    transition: background 0.3s ease-in-out;
+}
+
+/* Szekciók */
+.section {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    max-width: 1200px;
+    margin-bottom: 50px;
+    gap: 30px;
+    position: relative;
+}
+
+/* Mobilon egymás alatt legyenek */
+@media (max-width: 768px) {
+    .section {
+        flex-direction: column;
+        text-align: center;
+    }
+}
+
+/* Képek beállítása */
+.image-container {
+    position: relative;
+    width: 50%;
+}
+
+.house-image {
+    width: 100%;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+}
+
+.house-image:hover {
+    transform: scale(1.05);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Szövegek beállítása */
+.text-container h2 {
+    font-size: 2rem;
+    font-weight: 600;
+    color: #222;
+    font-family: "Poppins", sans-serif;
+}
+
+.text-container p {
+    font-size: 1.2rem;
+    color: #555;
+    font-family: "Poppins", sans-serif;
+    line-height: 1.6;
+}
+
+/* Balra és jobbra eltolás */
+.offset-left {
+    transform: translateX(-40px);
+    max-width: 100%;
+    overflow: hidden;
+}
+
+.offset-right {
+    transform: translateX(40px);
+    max-width: 100%;
+    overflow: hidden;
+}
+
+/* Egyedi eltolások (Képek és szövegek) */
+.section:nth-child(1) .image-container .house-image {
+    /* 1. kép - marad */
+    transform: translateX(0px);
+}
+
+.section:nth-child(1) .text-container {
+    /* 1. szöveg - marad */
+    transform: translateX(0px);
+}
+
+.section:nth-child(2) .image-container .house-image {
+    /* 2. kép - kicsit feljebb */
+    transform: translateX(0px) translateY(-120px);
+}
+
+.section:nth-child(2) .text-container {
+    /* 2. szöveg - mozgás a kép mellé */
+    transform: translateX(0px) translateY(-120px);
+}
+
+.section:nth-child(3) .image-container .house-image {
+    /* 3. kép - kicsit lejjebb */
+    transform: translateX(0px) translateY(-240px);
+}
+
+.section:nth-child(3) .text-container {
+    /* 3. szöveg - mozgás a kép mellé */
+    transform: translateX(0px) translateY(-240px);
+}
+
+/* Mobilnézetben ne legyen eltolás */
+@media (max-width: 768px) {
+
+    .house-image,
+    .text-container {
+        transform: translateX(0) translateY(0);
+    }
+}
+
+/* Nagy CTA gomb az alján */
+.final-cta {
+    text-align: center;
+    margin-top: 50px;
+    padding: 40px;
+    background: linear-gradient(to right, #f39c12, #e67e22);
+    color: white;
+    width: 100%;
+}
+
+.final-cta h2 {
+    font-size: 2.5rem;
+}
+
+.big-cta-button {
+    display: inline-block;
+    padding: 15px 30px;
+    font-size: 1.5rem;
+    background-color: #2c3e50;
+    color: white;
+    text-decoration: none;
+    border-radius: 8px;
+    margin-top: 20px;
+    transition: background 0.3s ease-in-out;
+}
+
+.big-cta-button:hover {
+    background-color: #1a252f;
+}
+
+/* Mobilbarát CTA */
+@media (max-width: 768px) {
+    .final-cta h2 {
+        font-size: 2rem;
+    }
+
+    .big-cta-button {
+        font-size: 1.2rem;
+        padding: 12px 25px;
+    }
+}
