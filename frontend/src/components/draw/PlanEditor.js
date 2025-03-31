@@ -30,6 +30,7 @@ const PlanEditor = ({ selectedTool, addWall, walls = [], setWalls, selectedWall,
 
     const { x, y } = e.target.getStage().getPointerPosition();
 
+    // Ha select módban vagyunk, és egy fal közelébe kattintunk, jelöljük ki
     if (selectedTool === 'select') {
       const clickedWall = walls.find(wall => {
         const A = { x: wall.start_x, y: wall.start_y };
@@ -41,7 +42,7 @@ const PlanEditor = ({ selectedTool, addWall, walls = [], setWalls, selectedWall,
         const t = Math.max(0, Math.min(1, ap_ab / ab2));
         const closest = { x: A.x + AB.x * t, y: A.y + AB.y * t };
         const distance = Math.hypot(x - closest.x, y - closest.y);
-        return distance < 10;
+        return distance < 10; // max 10 px távolságra a fal bármely pontjától
       });
       setSelectedWall(clickedWall || null);
       return;
@@ -65,18 +66,20 @@ const PlanEditor = ({ selectedTool, addWall, walls = [], setWalls, selectedWall,
         });
         addWall(cleanedWall);
       }
+
       setDrawing(false);
       setStartPoint(null);
       setPreviewLine(null);
     }
   };
 
+  // Egérintés események kezelése (bizonyos fokokban megfogja a falat)
   const handleMouseMove = (e) => {
     if (!drawing || !startPoint) return;
     const { x, y } = e.target.getStage().getPointerPosition();
     let dx = x - startPoint.x;
     let dy = y - startPoint.y;
-    const angle = Math.atan2(dy, dx);
+    const angle = Math.atan2(dy, dx); // radiánban
     const snapAngles = [
       0,
       Math.PI / 4,
@@ -88,15 +91,15 @@ const PlanEditor = ({ selectedTool, addWall, walls = [], setWalls, selectedWall,
       (7 * Math.PI) / 4,
       2 * Math.PI,
     ];
-    const SNAP_TOLERANCE = 0.07;
+    const SNAP_TOLERANCE = 0.07; // radiánban, kb. 4 fok
 
+    //let snapped = false;
     for (const targetAngle of snapAngles) {
-      const delta = Math.abs(angle - targetAngle);
-      const wrappedDelta = Math.min(delta, Math.abs(2 * Math.PI - delta));
-      if (wrappedDelta < SNAP_TOLERANCE) {
+      if (Math.abs(angle - targetAngle) < SNAP_TOLERANCE || Math.abs(angle - targetAngle + 2 * Math.PI) < SNAP_TOLERANCE) {
         const length = Math.sqrt(dx * dx + dy * dy);
         dx = Math.cos(targetAngle) * length;
         dy = Math.sin(targetAngle) * length;
+        //snapped = true;
         break;
       }
     }
@@ -107,6 +110,7 @@ const PlanEditor = ({ selectedTool, addWall, walls = [], setWalls, selectedWall,
       end_x: startPoint.x + dx,
       end_y: startPoint.y + dy,
     });
+
   };
 
   const snapToEndpoint = (x, y, tolerance = 10) => {
@@ -131,69 +135,6 @@ const PlanEditor = ({ selectedTool, addWall, walls = [], setWalls, selectedWall,
     };
   };
 
-  function getNormal({ x, y }) {
-    const length = Math.sqrt(x * x + y * y);
-    return { x: -y / length, y: x / length };
-  }
-
-  function getOffsetPoints(p1, p2, thickness) {
-    const dir = { x: p2.x - p1.x, y: p2.y - p1.y };
-    const normal = getNormal(dir);
-    return {
-      outer1: { x: p1.x + normal.x * thickness / 2, y: p1.y + normal.y * thickness / 2 },
-      outer2: { x: p2.x + normal.x * thickness / 2, y: p2.y + normal.y * thickness / 2 },
-    };
-  }
-
-  function getIntersection(p1, d1, p2, d2) {
-    const a1 = d1.y, b1 = -d1.x, c1 = a1 * p1.x + b1 * p1.y;
-    const a2 = d2.y, b2 = -d2.x, c2 = a2 * p2.x + b2 * p2.y;
-    const det = a1 * b2 - a2 * b1;
-    if (Math.abs(det) < 1e-6) return null;
-    return {
-      x: (b2 * c1 - b1 * c2) / det,
-      y: (a1 * c2 - a2 * c1) / det,
-    };
-  }
-
-  const joinTriangles = [];
-  const thickness = 25;
-
-  for (let i = 0; i < walls.length; i++) {
-    for (let j = i + 1; j < walls.length; j++) {
-      const w1 = walls[i];
-      const w2 = walls[j];
-
-      const sharedPoints = [
-        [w1.start_x, w1.start_y, w2.start_x, w2.start_y],
-        [w1.start_x, w1.start_y, w2.end_x, w2.end_y],
-        [w1.end_x, w1.end_y, w2.start_x, w2.start_y],
-        [w1.end_x, w1.end_y, w2.end_x, w2.end_y],
-      ];
-
-      for (const [x1, y1, x2, y2] of sharedPoints) {
-        if (Math.hypot(x1 - x2, y1 - y2) < 1) {
-          const shared = { x: x1, y: y1 };
-          const w1_dir = { x: w1.end_x - w1.start_x, y: w1.end_y - w1.start_y };
-          const w2_dir = { x: w2.end_x - w2.start_x, y: w2.end_y - w2.start_y };
-
-          const n1 = getNormal(w1_dir);
-          const n2 = getNormal(w2_dir);
-
-          const w1_outer = extendPoint(shared.x, shared.y, n1.x, n1.y, thickness / 2);
-          const w2_outer = extendPoint(shared.x, shared.y, n2.x, n2.y, thickness / 2);
-
-          const int = getIntersection(w1_outer, w1_dir, w2_outer, w2_dir);
-
-          if (int) {
-            joinTriangles.push([shared.x, shared.y, w1_outer.x, w1_outer.y, int.x, int.y]);
-            joinTriangles.push([shared.x, shared.y, w2_outer.x, w2_outer.y, int.x, int.y]);
-          }
-        }
-      }
-    }
-  }
-
   return (
     <Stage
       width={windowSize.width}
@@ -216,15 +157,6 @@ const PlanEditor = ({ selectedTool, addWall, walls = [], setWalls, selectedWall,
         {previewLine && (
           <Line points={[previewLine.start_x, previewLine.start_y, previewLine.end_x, previewLine.end_y]} stroke="gray" strokeWidth={5} dash={[10, 5]} />
         )}
-        {joinTriangles.map((pts, idx) => (
-          <Line
-            key={`join-${idx}`}
-            points={pts}
-            fill="gray"
-            stroke="gray"
-            closed
-          />
-        ))}
       </Layer>
     </Stage>
   );
