@@ -1,8 +1,9 @@
 // src/pages/MyPlans.js
 import React, { useEffect, useState } from "react";
-import { getPlans, deletePlan, updatePlan } from "../api/api";
+import { getPlan, getPlans, deletePlan, updatePlan } from "../api/api";
 import { FaFolderOpen, FaEdit, FaTrash } from "react-icons/fa";
 import "../styles/MyPlans.css";
+import { useNavigate } from "react-router-dom";
 
 const MyPlans = () => {
   const [plans, setPlans] = useState([]);
@@ -10,7 +11,23 @@ const MyPlans = () => {
   const [editingId, setEditingId] = useState(null);
   const [editedName, setEditedName] = useState("");
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+  const navigate = useNavigate();
 
+  const handleOpenPlan = async (id) => {
+    try {
+      const res = await getPlan(id);
+  
+      const planData = {
+        ...res,
+        id: res.id || res._id  
+      };
+  
+      navigate("/plan", { state: { planData } });
+    } catch (err) {
+      console.error("Terv betöltése sikertelen:", err);
+    }
+  };
+  
   useEffect(() => {
     const fetchPlans = async () => {
       try {
@@ -77,7 +94,7 @@ const MyPlans = () => {
                 )}
               </div>
               <div className="plan-actions">
-                <button className="blue" onClick={() => console.log("Open plan")}><FaFolderOpen /></button>
+                <button className="blue" onClick={() => handleOpenPlan(plan.id)}><FaFolderOpen /></button>
                 <button className="gray" onClick={() => {
                   setEditingId(plan.id);
                   setEditedName(plan.name);

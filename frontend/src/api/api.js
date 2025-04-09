@@ -19,7 +19,7 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    if (error.response?.status === 401) {
+    if (error.response?.status === 401 && !error.config._retry) {
       console.log("Access token expired. Attempting refresh...");
       try {
         const refreshToken = localStorage.getItem("refresh_token");
@@ -32,17 +32,18 @@ api.interceptors.response.use(
         const newAccessToken = refreshResponse.data.access;
         localStorage.setItem("access_token", newAccessToken);
 
-        // Az eredeti kérés megismétlése az új tokennel
+        // újra próbálkozunk az eredeti kéréssel
         error.config.headers["Authorization"] = `Bearer ${newAccessToken}`;
-        return axios(error.config);
+        error.config._retry = true;
+        return api(error.config); // <--- újra küldjük ugyanazzal a custom példánnyal
       } catch (refreshError) {
         console.log("Refresh token expired. Logging out...");
         localStorage.removeItem("access_token");
         localStorage.removeItem("refresh_token");
-        window.location.href = "/login"; // Kijelentkeztetés és átirányítás
+        window.location.href = "/login";
       }
     }
-    return Promise.reject(new Error(error));
+    return Promise.reject(error);
   }
 );
 
@@ -55,10 +56,19 @@ export const getAuthHeaders = () => ({
 });
 
 // Védett adatok lekérése MongoDB-ből (JWT token szükséges)
+// export const fetchProtectedData = async () => {
+//   try {
+//     const response = await axios.get(`${API_BASE_URL}/data/`, getAuthHeaders());
+//     return response.data;
+//   } catch (error) {
+//     return { error: "Unauthorized or token expired" };
+//   }
+// };
+
 export const fetchProtectedData = async () => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/data/`, getAuthHeaders());
-    return response.data;
+    const res = await api.get('/data/');
+    return res.data;
   } catch (error) {
     return { error: "Unauthorized or token expired" };
   }
@@ -68,54 +78,38 @@ export const fetchProtectedData = async () => {
 
 export const registerUser = async (userData) => {
   try {
-    const response = await axios.post(`${API_BASE_URL}/users/register/`, userData, {
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-    return response.data; // Sikeres válasz
+    const response = await api.post(`/users/register/`, userData);
+    return response.data;
   } catch (error) {
     if (error.response) {
       return { error: error.response.data.error || "Registration failed" };
-    } else {
-      return { error: "Server error. Please try again later." };
     }
+    return { error: "Server error. Please try again later." };
   }
 };
 
 export const loginUser = async (userData) => {
   try {
-    const response = await axios.post(`${API_BASE_URL}/users/login/`, userData, {
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
+    const response = await api.post(`/users/login/`, userData);
 
-    // JWT tokenek mentése a localStorage-be
+    // Tokenek mentése
     localStorage.setItem("access_token", response.data.access);
     localStorage.setItem("refresh_token", response.data.refresh);
 
-    return response.data; // Sikeres bejelentkezés esetén visszakapott adat
+    return response.data;
   } catch (error) {
     if (error.response) {
-      return { error: error.response?.data?.error || "Login failed" };
-    } else {
-      return { error: "Server error. Please try again later." };
+      return { error: error.response.data.error || "Login failed" };
     }
+    return { error: "Server error. Please try again later." };
   }
 };
 
 export const logoutUser = async () => {
   try {
-    const response = await axios.post(`${API_BASE_URL}/users/logout/`, {}, {
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-
+    const response = await api.post(`/users/logout/`);
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
-
     return response.data;
   } catch (error) {
     console.error("Logout failed:", error);
@@ -125,13 +119,18 @@ export const logoutUser = async () => {
 
 //PLANS--------------------------------------------------------------------------------------------------------------------
 
+export const getPlan = async (id) => {
+  const res = await api.get(`/plans/?id=${id}`);
+  return res.data;
+};
+
 export const getPlans = async () => {
   const res = await api.get('/plans/');
   return res.data;
 };
 
-export const createPlan = async (name) => {
-  const res = await api.post('/plans/', { name });
+export const createPlan = async (plan) => {
+  const res = await api.post('/plans/', plan);
   return res.data;
 };
 
@@ -140,8 +139,8 @@ export const deletePlan = async (id) => {
   return res.data;
 };
 
-export const updatePlan = async (id, name) => {
-  const res = await api.patch('/plans/', { id, name });
+export const updatePlan = async (id, payload) => {
+  const res = await api.patch('/plans/', { id, ...payload });
   return res.data;
 };
 

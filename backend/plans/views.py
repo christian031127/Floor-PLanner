@@ -13,6 +13,23 @@ class PlanView(APIView):
     def get(self, request):
         user_id = request.user.id
         plans_collection = db["plans"]
+
+        plan_id = request.query_params.get("id")
+
+        if plan_id:
+            plan = plans_collection.find_one({
+                "_id": ObjectId(plan_id),
+                "user_id": ObjectId(user_id)
+            })
+
+            if not plan:
+                return Response({"error": "Plan not found"}, status=status.HTTP_404_NOT_FOUND)
+
+            plan["_id"] = str(plan["_id"])
+            plan["user_id"] = str(plan["user_id"])
+
+            return Response(plan, status=status.HTTP_200_OK)
+
         user_plans = plans_collection.find({"user_id": ObjectId(user_id)})
 
         plans = [{
@@ -22,6 +39,7 @@ class PlanView(APIView):
 
         return Response(plans, status=status.HTTP_200_OK)
 
+
     def post(self, request):
         user_id = request.user.id
         name = request.data.get("name")
@@ -29,9 +47,16 @@ class PlanView(APIView):
         if not name:
             return Response({"error": "Name is required!"}, status=status.HTTP_400_BAD_REQUEST)
 
+        walls = request.data.get("walls", [])
+        elements = request.data.get("elements", []) 
+        objects = request.data.get("objects", [])
+
         plan_doc = {
             "user_id": ObjectId(user_id),
-            "name": name
+            "name": name,
+            "walls": walls,
+            "elements": elements,
+            "objects": objects
         }
 
         result = db["plans"].insert_one(plan_doc)
@@ -43,13 +68,29 @@ class PlanView(APIView):
         }, status=status.HTTP_201_CREATED)
     
     def patch(self, request):
+        user_id = request.user.id
         plan_id = request.data.get("id")
-        new_name = request.data.get("name")
-        if not plan_id or not new_name:
-            return Response({"error": "Missing data"}, status=status.HTTP_400_BAD_REQUEST)
 
-        db["plans"].update_one({"_id": ObjectId(plan_id)}, {"$set": {"name": new_name}})
-        return Response({"message": "Plan name updated"}, status=status.HTTP_200_OK)
+        if not plan_id:
+            return Response({"error": "Plan ID is required"}, status=status.HTTP_400_BAD_REQUEST)
+
+        update_fields = {}
+        for field in ["name", "walls", "elements", "objects"]:
+            if field in request.data:
+                update_fields[field] = request.data[field]
+
+        if not update_fields:
+            return Response({"error": "No fields to update"}, status=status.HTTP_400_BAD_REQUEST)
+
+        result = db["plans"].update_one(
+            {"_id": ObjectId(plan_id), "user_id": ObjectId(user_id)},
+            {"$set": update_fields}
+        )
+
+        if result.matched_count == 0:
+            return Response({"error": "Plan not found or not yours"}, status=status.HTTP_404_NOT_FOUND)
+
+        return Response({"message": "Plan updated successfully"}, status=status.HTTP_200_OK)
 
     def delete(self, request):
         plan_id = request.data.get("id")
