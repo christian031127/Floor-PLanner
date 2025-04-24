@@ -19,31 +19,66 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    if (error.response?.status === 401 && !error.config._retry) {
-      console.log("Access token expired. Attempting refresh...");
-      try {
-        const refreshToken = localStorage.getItem("refresh_token");
-        if (!refreshToken) throw new Error("No refresh token available");
+    const originalRequest = error.config;
 
-        const refreshResponse = await axios.post(`${API_BASE_URL}/token/refresh/`, {
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+
+      const refreshToken = localStorage.getItem("refresh_token");
+
+      if (!refreshToken) {
+        console.warn("No refresh token found. Logging out...");
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("refresh_token");
+        localStorage.removeItem("user");
+        localStorage.setItem("logout_reason", "session_expired");
+        return Promise.reject(new Error("No refresh token"));
+      }
+
+      try {
+        const refreshResponse = await axios.post(`${API_BASE_URL}/users/refresh-token/`, {
           refresh: refreshToken,
         });
 
         const newAccessToken = refreshResponse.data.access;
-        localStorage.setItem("access_token", newAccessToken);
+        const newRefreshToken = refreshResponse.data.refresh;
 
-        // újra próbálkozunk az eredeti kéréssel
-        error.config.headers["Authorization"] = `Bearer ${newAccessToken}`;
-        error.config._retry = true;
-        return api(error.config); // <--- újra küldjük ugyanazzal a custom példánnyal
+        localStorage.setItem("access_token", newAccessToken);
+        if (newRefreshToken) {
+          localStorage.setItem("refresh_token", newRefreshToken);
+          console.log("Frissített refresh token:", newRefreshToken);
+        }
+
+        originalRequest.headers["Authorization"] = `Bearer ${newAccessToken}`;
+        return api(originalRequest);
       } catch (refreshError) {
-        console.log("Refresh token expired. Logging out...");
+        console.warn("Refresh token invalid or expired. Logging out...");
+
+        try {
+          await axios.post(`${API_BASE_URL}/users/logout/`);
+          console.log("Backend logout request sent.");
+        } catch (logoutErr) {
+          console.error("Backend logout request failed:", logoutErr);
+        }
+
         localStorage.removeItem("access_token");
         localStorage.removeItem("refresh_token");
-        window.location.href = "/login";
+        localStorage.removeItem("user");
+        localStorage.setItem("logout_reason", "session_expired");
+
+        window.location.href = "/"
+
+        return Promise.reject(
+          refreshError instanceof Error
+            ? refreshError
+            : new Error("Session expired")
+        );
       }
     }
-    return Promise.reject(error);
+
+    return Promise.reject(
+      error instanceof Error ? error : new Error(error)
+    );
   }
 );
 
@@ -54,25 +89,6 @@ export const getAuthHeaders = () => ({
     Authorization: `Bearer ${localStorage.getItem("access_token")}`,
   },
 });
-
-// Védett adatok lekérése MongoDB-ből (JWT token szükséges)
-// export const fetchProtectedData = async () => {
-//   try {
-//     const response = await axios.get(`${API_BASE_URL}/data/`, getAuthHeaders());
-//     return response.data;
-//   } catch (error) {
-//     return { error: "Unauthorized or token expired" };
-//   }
-// };
-
-export const fetchProtectedData = async () => {
-  try {
-    const res = await api.get('/data/');
-    return res.data;
-  } catch (error) {
-    return { error: "Unauthorized or token expired" };
-  }
-};
 
 //USERS--------------------------------------------------------------------------------------------------------------------
 

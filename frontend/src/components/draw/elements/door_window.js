@@ -1,5 +1,6 @@
 import React from 'react';
-import { Group, Rect, Arc } from 'react-konva';
+import tinycolor from 'tinycolor2'; // Import tinycolor for color manipulation
+import { Group, Rect, Arc } from 'react-konva'; // Import Konva components for rendering shapes
 
 const WALL_THICKNESS = 25;
 
@@ -18,12 +19,19 @@ export function calculateElementTransform(wall, position) {
   };
 }
 
-export function renderDoor(door, i, preview = false) {
-  const length = DOOR_LENGTH;
+// Render Door
+export function renderDoor(door, i, preview = false, onClick = null, isSelected = false, onDragMove) {
+  const length = door.length || DOOR_LENGTH;
   const thickness = WALL_THICKNESS;
 
   const { x, y, angle } = calculateElementTransform(door.wall, door.position);
-  const color = preview ? 'rgba(231, 194, 167, 0.3)' : 'rgba(139,69,19,0.3)';
+
+  const baseColor = door.fill || '#F5F5F5';
+  const finalBaseColor = preview ? tinycolor(baseColor).setAlpha(0.4).toRgbString() : baseColor;
+
+  const strokeColor = 'black';
+  const strokeWidth = isSelected ? 2.5 : 1;
+
   const flip = door.flip || false;
 
   return (
@@ -33,45 +41,50 @@ export function renderDoor(door, i, preview = false) {
       y={y}
       rotation={angle}
       scaleX={flip ? -1 : 1}
-    >
-      {/* Ajtólap */}
+      onClick={onClick || undefined}
+      opacity={isSelected ? 0.7 : 1}
+      draggable={!preview}
+      onDragMove={onDragMove}>
+
       <Rect
         x={0}
         y={0}
         width={length}
         height={thickness}
-        fill={color}
+        fill={finalBaseColor}
         offsetX={length / 2}
         offsetY={thickness / 2}
-        stroke="black"
-        strokeWidth={1}
+        stroke={strokeColor}
+        strokeWidth={strokeWidth}
       />
 
-      {/* Ív */}
       <Arc
         x={length / 2}
         y={flip ? WALL_THICKNESS / 2 : -WALL_THICKNESS / 2}
         innerRadius={0}
         outerRadius={length}
-        fill={color}
+        fill={finalBaseColor}
         angle={90}
         rotation={flip ? 90 : 180}
-        stroke="black"
-        strokeWidth={1}
+        stroke={strokeColor}
+        strokeWidth={strokeWidth}
       />
     </Group>
   );
 }
 
-export function renderWindow(win, i, preview = false) {
-  const length = WINDOW_LENGTH;
+// Render Window
+export function renderWindow(win, i, preview = false, onClick = null, isSelected = false) {
+  const length = win.length || WINDOW_LENGTH;
   const lineThickness = 2;
   const glassthickness = 6;
   const postWidth = lineThickness;
   const postHeight = WALL_THICKNESS;
 
   const { x, y, angle } = calculateElementTransform(win.wall, win.position);
-  const color = preview ? 'rgba(255, 255, 255, 0.5)' : 'lightblue';
+
+  const baseColor = win.fill || '#F5F5F5';
+  const finalBaseColor = preview ? tinycolor(baseColor).setAlpha(0.4).toRgbString() : baseColor;
 
   return (
     <Group
@@ -79,16 +92,29 @@ export function renderWindow(win, i, preview = false) {
       x={x}
       y={y}
       rotation={angle}
-    >
+      onClick={onClick || undefined}
+      opacity={isSelected ? 0.7 : 1}>
+
+      {/* Láthatatlan háttér, nagyobb kattintható terület */}
+      <Rect
+        x={-length / 2}
+        y={-postHeight / 2}
+        width={length}
+        height={postHeight}
+        fill="transparent"
+      />
+
       {/* Bal oldal */}
       <Rect
         x={-length / 2}
         y={0}
         width={postWidth}
         height={postHeight}
-        fill={color}
+        fill={finalBaseColor}
         offsetX={postWidth / 2}
         offsetY={postHeight / 2}
+        stroke={isSelected ? 'black' : undefined}
+        strokeWidth={isSelected ? 1.5 : 0}
       />
 
       {/* Jobb oldal */}
@@ -97,9 +123,11 @@ export function renderWindow(win, i, preview = false) {
         y={0}
         width={postWidth}
         height={postHeight}
-        fill={color}
+        fill={finalBaseColor}
         offsetX={postWidth / 2}
         offsetY={postHeight / 2}
+        stroke={isSelected ? 'black' : undefined}
+        strokeWidth={isSelected ? 1.5 : 0}
       />
 
       {/* Közepe */}
@@ -108,9 +136,11 @@ export function renderWindow(win, i, preview = false) {
         y={0}
         width={length}
         height={glassthickness}
-        fill={color}
+        fill={finalBaseColor}
         offsetX={length / 2}
         offsetY={glassthickness / 2}
+        stroke={isSelected ? 'black' : undefined}
+        strokeWidth={isSelected ? 1.5 : 0}
       />
     </Group>
   );

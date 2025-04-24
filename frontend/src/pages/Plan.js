@@ -13,6 +13,10 @@ const PlanPage = () => {
   const [grills, setGrills] = useState([]);
   const [lamps, setLamps] = useState([]);
 
+  const [editMode, setEditMode] = useState(false); // szerkesztési mód
+  const [elements, setElements] = useState([...doors, ...windows]);
+
+  const [selectedElement, setSelectedElement] = useState(null); // kiválasztott elem
   const [selectedTool, setSelectedTool] = useState('select');
   const [selectedWall, setSelectedWall] = useState(null); // kiválasztott fal
   const [isInteractingWithUI, setIsInteractingWithUI] = useState(false); // UI interakció jelző
@@ -24,6 +28,16 @@ const PlanPage = () => {
   const location = useLocation();
   const loadedPlan = location.state?.planData;
 
+  // Set edit mode based on selected element
+  useEffect(() => {
+    if (selectedElement) {
+      setEditMode(true);
+    } else {
+      setEditMode(false);
+    }
+  }, [selectedElement]);
+
+  // Load plan data if available
   useEffect(() => {
     if (loadedPlan) {
 
@@ -48,17 +62,20 @@ const PlanPage = () => {
           const dy = wall.end.y - wall.start.y;
 
           return {
+            id: crypto.randomUUID(),
+            type: "door",
             wallId: e.wall_id,
-            wall, // teljes falra szükség van a transformhoz
+            wall,
             position: {
               x: wall.start.x + dx * e.position_x,
               y: wall.start.y + dy * e.position_x
             },
-            flip: e.flip
+            flip: e.flip,
+            length: 50,
+            fill: 'sienna'
           };
         }).filter(Boolean) || []
       );
-
 
       setWindows(
         loadedPlan.elements?.filter(e => e.type === 'window').map(e => {
@@ -69,16 +86,19 @@ const PlanPage = () => {
           const dy = wall.end.y - wall.start.y;
 
           return {
+            id: crypto.randomUUID(),
+            type: "window",
             wallId: e.wall_id,
             wall,
             position: {
               x: wall.start.x + dx * e.position_x,
               y: wall.start.y + dy * e.position_x
-            }
+            },
+            length: 60,
+            fill: 'skyblue'
           };
         }).filter(Boolean) || []
       );
-
 
       setBeds(
         loadedPlan.objects?.filter(o => o.type === 'bed').map(o => ({
@@ -108,57 +128,157 @@ const PlanPage = () => {
         })) || []
       );
     }
+
   }, [loadedPlan]);
+
+  useEffect(() => {
+    setElements([...doors, ...windows]);
+  }, [doors, windows]);
 
   // új fal hozzáadása
   const addWall = (wall) => {
     setWalls([...walls, wall]);
   };
 
-  // fal vastagságának módosítása
-  const handleThicknessChange = (newThickness) => {
-    if (!selectedWall) return;
-    const updatedWalls = walls.map(wall =>
-      wall === selectedWall ? { ...wall, thickness: newThickness } : wall
+  //--------------------------------------------------------------Wall Property-----------------------------------------------------------------------------------
+
+  // Change wall thickness
+  const handleWallThicknessChange = (newThickness) => {
+    if (!selectedElement || selectedElement.type !== "wall") return;
+
+    const updatedWalls = walls.map((wall) =>
+      wall === selectedElement.data
+        ? { ...wall, thickness: newThickness }
+        : wall
     );
+
+    const updatedWall = updatedWalls.find(
+      (w) => w.start.x === selectedElement.data.start.x &&
+        w.start.y === selectedElement.data.start.y &&
+        w.end.x === selectedElement.data.end.x &&
+        w.end.y === selectedElement.data.end.y
+    );
+
     setWalls(updatedWalls);
-    setSelectedWall({ ...selectedWall, thickness: newThickness });
+
+    if (updatedWall) {
+      setSelectedElement({ type: "wall", data: updatedWall });
+    }
   };
 
-  // fal törlése
+  // Delete wall
   const handleWallDelete = () => {
-    if (!selectedWall) return;
-    const updatedWalls = walls.filter(wall => wall !== selectedWall);
+    if (!selectedElement || selectedElement.type !== "wall") return;
+    const wallToDelete = selectedElement.data;
+    const updatedWalls = walls.filter(wall => wall !== wallToDelete);
     setWalls(updatedWalls);
-    setSelectedWall(null);
+    setSelectedElement(null);
   };
+
+  //--------------------------------------------------------------Element Property-----------------------------------------------------------------------------------
+
+  // Update element (door/window) position
+  const handleElementUpdate = (updatedElement) => {
+    if (!selectedElement || selectedElement.type !== "element") return;
+
+    const updatedList = elements.map((el) =>
+      el === selectedElement.data ? updatedElement : el
+    );
+    setElements(updatedList);
+
+    if (updatedElement.type === 'door') {
+      setDoors(prev => prev.map(el => el === selectedElement.data ? updatedElement : el));
+    } else if (updatedElement.type === 'window') {
+      setWindows(prev => prev.map(el => el === selectedElement.data ? updatedElement : el));
+    }
+
+    setSelectedElement({ type: "element", data: updatedElement });
+  };
+
+  //---------------------------------------------------------------Object Property-----------------------------------------------------------------------------------
+
+  // Update object (bed/sofa/grill/lamp) position or delete it
+  const handleObjectUpdate = (updatedObject) => {
+    if (!selectedElement || selectedElement.type !== 'object') return;
+
+    const objectId = selectedElement.data.id;
+    if (!objectId) return;
+
+    const updateList = (list, setter) => {
+      if (updatedObject === null) {
+        // törlés
+        setter(list.filter(obj => obj.id !== objectId));
+      } else {
+        setter(list.map(obj => obj.id === objectId ? { ...obj, ...updatedObject } : obj));
+      }
+    };
+
+    switch (selectedElement.data.type) {
+      case 'bed':
+        updateList(beds, setBeds);
+        break;
+      case 'sofa':
+        updateList(sofas, setSofas);
+        break;
+      case 'grill':
+        updateList(grills, setGrills);
+        break;
+      case 'lamp':
+        updateList(lamps, setLamps);
+        break;
+      default:
+        return;
+    }
+
+    if (updatedObject !== null) {
+      const updatedFullObject = { ...selectedElement.data, ...updatedObject };
+      setSelectedElement({ type: 'object', data: updatedFullObject });
+    } else {
+      setSelectedElement(null);
+    }
+  };
+
 
   return (
     <div className="plan-container">
-      {/* Bal oldali vezérlőpanel */}
+
+      {/* Left Panel */}
       <ToolPanel
+
         walls={walls}
         doors={doors}
         windows={windows}
-        sofas={sofas}
-        beds={beds}
-        grills={grills}
-        lamps={lamps}
 
-        selectedTool={selectedTool}
-        setSelectedTool={setSelectedTool}
-        editMode={!!selectedWall}
+        elements={elements} setElements={setElements}
+        selectedElement={selectedElement} setSelectedElement={setSelectedElement}
+
+        sofas={sofas} setSofas={setSofas}
+        beds={beds} setBeds={setBeds} 
+        grills={grills} setGrills={setGrills}
+        lamps={lamps} setLamps={setLamps}
+        
+        selectedTool={selectedTool} setSelectedTool={setSelectedTool}
+
         selectedWall={selectedWall}
-        setWallThickness={handleThicknessChange}
+        setWallThickness={handleWallThicknessChange}
         deleteWall={handleWallDelete}
+
         exitEditMode={() => setSelectedWall(null)}
+
         setIsInteractingWithUI={setIsInteractingWithUI}
         justSelectedRef={justSelectedRef}
 
-        planName={planName}
-        setPlanName={setPlanName}
-        planId={planId}
-        setPlanId={setPlanId}
+        /* Update element or object */
+        handleElementUpdate={handleElementUpdate}
+        handleObjectUpdate={handleObjectUpdate}
+
+        /* Edit Mode */
+        editMode={editMode}
+        setEditMode={setEditMode}
+
+        /* Plan Name and ID */
+        planName={planName} setPlanName={setPlanName}
+        planId={planId} setPlanId={setPlanId}
         resetPlan={() => {
           setWalls([]);
           setDoors([]);
@@ -172,31 +292,34 @@ const PlanPage = () => {
         }}
       />
 
-      {/* Alaprajz szerkesztő */}
+      {/* Right Panel */}
       <div className="canvas-container">
         <PlanEditor
-          walls={walls}
-          setWalls={setWalls}
-          doors={doors}
-          setDoors={setDoors}
-          windows={windows}
-          setWindows={setWindows}
-          sofas={sofas}
-          setSofas={setSofas}
-          beds={beds}
-          setBeds={setBeds}
-          grills={grills}
-          setGrills={setGrills}
-          lamps={lamps}
-          setLamps={setLamps}
 
-          selectedTool={selectedTool}
-          setSelectedTool={setSelectedTool}
+          walls={walls} setWalls={setWalls}
+          doors={doors} setDoors={setDoors}
+          windows={windows} setWindows={setWindows}
+
+          sofas={sofas} setSofas={setSofas}
+          beds={beds} setBeds={setBeds}
+          grills={grills} setGrills={setGrills}
+          lamps={lamps} setLamps={setLamps}
+
+          selectedTool={selectedTool} setSelectedTool={setSelectedTool}
+
           addWall={addWall}
-          selectedWall={selectedWall}
-          setSelectedWall={setSelectedWall}
+          selectedWall={selectedWall} setSelectedWall={setSelectedWall}
+
           isInteractingWithUI={isInteractingWithUI}
           justSelectedRef={justSelectedRef}
+
+          elements={elements} setElements={setElements}
+          selectedElement={selectedElement} setSelectedElement={setSelectedElement}
+
+          editMode={editMode} setEditMode={setEditMode}
+          handleObjectUpdate={handleObjectUpdate}
+          handleElementUpdate={handleElementUpdate}
+          handleSelectElement={setSelectedElement}
 
           planName={planName}
         />

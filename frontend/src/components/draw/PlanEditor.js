@@ -27,12 +27,18 @@ const PlanEditor = ({
   selectedWall, setSelectedWall,
   isInteractingWithUI,
   justSelectedRef,
-  planName
+  planName,
+  setSelectedElement,
+  selectedElement,
+  elements, setElements, updatedElement, setEditMode,
+  handleObjectUpdate, handleElementUpdate
 }) => {
 
+  // eslint-disable-next-line no-unused-vars
   const [drawing, setDrawing] = useState(false);
   const [startPoint, setStartPoint] = useState(null);
   const [previewWall, setPreviewWall] = useState(null);
+  // eslint-disable-next-line no-unused-vars
   const [debugPoints, setDebugPoints] = useState([]);
   const [windowSize, setWindowSize] = useState({
     width: window.innerWidth - 250,
@@ -62,33 +68,55 @@ const PlanEditor = ({
     setPendingObject(null);
   }, [selectedTool, justSelectedRef]);
 
+  // Handle mouse events for placing objects and drawing walls
   const handleMouseDown = (e) => {
     const { x, y } = e.target.getStage().getPointerPosition();
     if (justSelectedRef.current) return;
 
+    // Door and window placement
     if (pendingObject && ['door', 'window'].includes(pendingObject.type)) {
       const newItem = {
+        id: crypto.randomUUID(),
+        type: pendingObject.type,
         position: pendingObject.position,
         wall: pendingObject.wall,
         wallId: pendingObject.wall?.id,
-        ...(pendingObject.flip !== undefined ? { flip: pendingObject.flip } : {})
+        ...(pendingObject.flip !== undefined ? { flip: pendingObject.flip } : {}),
+        length: pendingObject.type === 'door' ? 50 : 60,
+        fill: pendingObject.type === 'door' ? '#F5F5F5' : '#F5F5F5'
       };
 
-      if (pendingObject.type === 'door') setDoors([...doors, newItem]);
-      else setWindows([...windows, newItem]);
+      if (pendingObject.type === 'door') {
+        setDoors([...doors, newItem]);
+      } else {
+        setWindows([...windows, newItem]);
+      }
+
+      setElements(prev => [...prev, newItem]);
 
       setPendingObject(null);
       setSelectedTool('select');
       return;
     }
 
+
+    // First click on a pending object (sofa, bed, grill, lamp)
     if (pendingObject && placementPhase && ['sofa', 'bed', 'grill', 'lamp'].includes(pendingObject.type)) {
       setPlacementPhase(false);
       return;
     }
 
+    // Second click on a pending object (sofa, bed, grill, lamp)
     if (pendingObject && !placementPhase && ['sofa', 'bed', 'grill', 'lamp'].includes(pendingObject.type)) {
-      const newItem = { position: pendingObject.position, angle: pendingObject.angle };
+      const newItem = {
+        id: crypto.randomUUID(),
+        type: pendingObject.type,
+        position: pendingObject.position,
+        angle: pendingObject.angle,
+        size: pendingObject.size,
+        fill: pendingObject.fill ?? '#888',
+      };
+
       switch (pendingObject.type) {
         case 'sofa': setSofas([...sofas, newItem]); break;
         case 'bed': setBeds([...beds, newItem]); break;
@@ -96,33 +124,41 @@ const PlanEditor = ({
         case 'lamp': setLamps([...lamps, newItem]); break;
         default: break;
       }
+
       setPendingObject(null);
       setSelectedTool('select');
       return;
     }
 
+    // Handle door and window placement to walls
     if (selectedTool === 'door' || selectedTool === 'window') {
       const nearestWall = findNearestWallOnClick(x, y);
       if (nearestWall) {
         const isWindow = selectedTool === 'window';
         const elementLength = isWindow ? WINDOW_LENGTH : DOOR_LENGTH;
         const placement = getWallPlacementPoint(nearestWall, x, y, elementLength, isWindow ? 'center' : 'start');
-
         const flip = !isWindow && isMouseLeftOfWall(nearestWall, { x, y });
 
         const newItem = {
+          id: crypto.randomUUID(),
+          type: selectedTool,
           position: placement,
           wall: nearestWall,
-          wallId: pendingObject.wall?.id,
+          wallId: nearestWall.id,
           ...(isWindow ? {} : { flip }),
+          length: isWindow ? 60 : 50,
+          fill: isWindow ? '#F5F5F5' : '#F5F5F5'
         };
 
         if (isWindow) setWindows([...windows, newItem]);
         else setDoors([...doors, newItem]);
+
+        setElements(prev => [...prev, newItem]);
       }
       return;
     }
 
+    // Handle wall drawing
     if (!isInteractingWithUI && selectedTool === 'wall') {
       if (!drawing) {
         const snapped = snapToExistingWallEnds(x, y);
@@ -136,8 +172,10 @@ const PlanEditor = ({
 
         const updated = [...walls, newWall];
         const { adjusted, debug } = adjustWallEndpoints(updated);
+
         setWalls(adjusted);
         addWall(newWall);
+
         setDebugPoints(debug);
         setDrawing(false);
         setStartPoint(null);
@@ -146,6 +184,7 @@ const PlanEditor = ({
     }
   };
 
+  // Handle mouse movement for object placement and wall drawing
   const handleMouseMove = (e) => {
     if (isInteractingWithUI) return;
 
@@ -196,10 +235,14 @@ const PlanEditor = ({
 
         setPendingObject({
           type: selectedTool,
-          position: pos,
           wall,
-          ...(isWindow ? {} : { flip }) // csak ha ajtó
+          wallId: wall.id,
+          position: pos,
+          ...(isWindow ? {} : { flip }),
+          length: selectedTool === "door" ? 50 : 60,
+          fill: selectedTool === "door" ? "#F5F5F5" : "#F5F5F5",
         });
+
       }
 
       return true;
@@ -285,6 +328,36 @@ const PlanEditor = ({
     return null;
   };
 
+  const handleElementDragMove = (element, setElementList) => (e) => {
+    const { x, y } = e.target.getStage().getPointerPosition();
+  
+    const wall = element.wall;
+    if (!wall) return;
+  
+    const dx = wall.end.x - wall.start.x;
+    const dy = wall.end.y - wall.start.y;
+    const wallLength = Math.sqrt(dx * dx + dy * dy);
+  
+    const vectorToPoint = {
+      x: x - wall.start.x,
+      y: y - wall.start.y
+    };
+  
+    const projection = (vectorToPoint.x * dx + vectorToPoint.y * dy) / wallLength;
+    const clamped = Math.max(0, Math.min(projection, wallLength));
+  
+    const newPosition = {
+      x: wall.start.x + dx * (clamped / wallLength),
+      y: wall.start.y + dy * (clamped / wallLength)
+    };
+  
+    const updated = { ...element, position: newPosition };
+  
+    setElementList((prev) => prev.map((el) => (el.id === element.id ? updated : el)));
+    setSelectedElement({ type: "element", data: updated });
+  };
+  
+
   const distanceToLineSegment = (A, B, P) => {
     const dx = B.x - A.x;
     const dy = B.y - A.y;
@@ -324,60 +397,192 @@ const PlanEditor = ({
 
   return (
     <>
-    {planName && (
-      <div className="plan-name-label">
-        Plan: {planName}
-      </div>
-    )}
-    
-    <Stage
-      width={windowSize.width}
-      height={windowSize.height}
-      onMouseDown={handleMouseDown}
-      onMouseMove={handleMouseMove}
-      style={{ backgroundColor: '#f5e6d3' }}
-    >
-      <Layer>
-        <Rect x={0} y={0} width={windowSize.width} height={windowSize.height} fill="#f5e6d3" />
-        <GridOverlay width={windowSize.width} height={windowSize.height} cellSize={25} />
+      {planName && (
+        <div className="plan-name-label">
+          Plan: {planName}
+        </div>
+      )}
 
-        {walls.map((wall) => renderWall(wall, wall.id, selectedTool === 'select' && wall === selectedWall ? 'red' : 'grey'))}
-        {previewWall && (
-          <>
-            {renderWall(previewWall, 'preview', 'grey')}
-            <Circle x={previewWall.end.x} y={previewWall.end.y} radius={5} fill="orange" />
-          </>
-        )}
+      <Stage
+        width={windowSize.width}
+        height={windowSize.height}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        style={{ backgroundColor: '#f5e6d3' }}
+      >
+        <Layer>
+          <Rect x={0} y={0} width={windowSize.width} height={windowSize.height} fill="#f5e6d3" />
+          <GridOverlay width={windowSize.width} height={windowSize.height} cellSize={25} />
 
-        {/* {debugPoints.map((pt, i) => (
+          {walls.map((wall) =>
+            renderWall(
+              wall,
+              wall.id,
+              selectedTool === 'select' &&
+                selectedElement?.type === 'wall' &&
+                selectedElement.data === wall
+                ? 'red'
+                : 'grey',
+              (e) => {
+                if (selectedTool === "select") {
+                  e.cancelBubble = true;
+                  setSelectedElement({ type: "wall", data: wall });
+                  setEditMode(true);
+                }
+              }
+            )
+          )}
+
+          {previewWall && (
+            <>
+              {renderWall(previewWall, 'preview', 'grey')}
+              <Circle x={previewWall.end.x} y={previewWall.end.y} radius={5} fill="orange" />
+            </>
+          )}
+
+          {/* {debugPoints.map((pt, i) => (
           <Circle key={`debug-${i}-${Math.round(pt.x)}-${Math.round(pt.y)}`} x={pt.x} y={pt.y} radius={5} fill="red" />
         ))} */}
 
 
-        {doors.map((door, i) => renderDoor(door, i))}
-        {windows.map((win, i) => renderWindow(win, i))}
+          {elements
+            .filter(el => el.type === 'door')
+            .map((door, i) =>
+              renderDoor(
+                door,
+                i,
+                false,
+                (e) => {
+                  if (selectedTool === 'select') {
+                    e.cancelBubble = true;
+                    setSelectedElement({ type: 'element', data: door });
+                    setEditMode(true);
+                  }
+                },
+                selectedElement?.type === 'element' && selectedElement.data.id === door.id,
+                handleElementDragMove(door, setDoors)
+              )
+            )}
 
-        {sofas.map((sofa, i) => renderSofa(sofa, i))}
-        {beds.map((bed, i) => renderBed(bed, i))}
+          {elements
+            .filter(el => el.type === 'window')
+            .map((win, i) =>
+              renderWindow(
+                win,
+                i,
+                false,
+                (e) => {
+                  if (selectedTool === 'select') {
+                    e.cancelBubble = true;
+                    setSelectedElement({ type: 'element', data: win });
+                    setEditMode(true);
+                  }
+                },
+                selectedElement?.type === 'element' && selectedElement.data.id === win.id
+              )
+            )}
 
-        {grills.map((grill, i) => renderGrill(grill, i))}
-        {lamps.map((lamp, i) => renderLamp(lamp, i))}
+          {sofas.map((sofa, i) =>
+            renderSofa(
+              sofa,
+              i,
+              false,
+              () => {
+                if (selectedTool === 'select') {
+                  setSelectedElement({ type: 'object', data: sofa });
+                  setEditMode(true);
+                }
+              },
+              selectedElement?.type === 'object' && selectedElement.data.id === sofa.id,
+              (e) => {
+                const newPos = e.target.position();
+                handleObjectUpdate({
+                  ...sofa,
+                  position: { x: newPos.x, y: newPos.y }
+                });
+              }
+            )
+          )}
 
+          {beds.map((bed, i) =>
+            renderBed(
+              bed,
+              i,
+              false,
+              () => {
+                if (selectedTool === 'select') {
+                  setSelectedElement({ type: 'object', data: bed });
+                  setEditMode(true);
+                }
+              },
+              selectedElement?.type === 'object' && selectedElement.data.id === bed.id,
+              (e) => {
+                const newPos = e.target.position();
+                handleObjectUpdate({
+                  ...bed,
+                  position: { x: newPos.x, y: newPos.y }
+                });
+              }
+            )
+          )}
 
-        {pendingObject && (() => {
-          switch (pendingObject.type) {
-            case 'sofa': return renderSofa(pendingObject, 'preview', true);
-            case 'bed': return renderBed(pendingObject, 'preview', true);
-            case 'door': return renderDoor(pendingObject, 'preview', true);
-            case 'window': return renderWindow(pendingObject, 'preview', true);
-            case 'grill': return renderGrill(pendingObject, 'preview', true);
-            case 'lamp': return renderLamp(pendingObject, 'preview', true);
-            default: return null;
-          }
-        })()}
+          {grills.map((grill, i) =>
+            renderGrill(
+              grill,
+              i,
+              false,
+              () => {
+                if (selectedTool === 'select') {
+                  setSelectedElement({ type: 'object', data: grill });
+                  setEditMode(true);
+                }
+              },
+              selectedElement?.type === 'object' && selectedElement.data.id === grill.id,
+              (e) => {
+                const newPos = e.target.position();
+                handleObjectUpdate({
+                  ...grill,
+                  position: { x: newPos.x, y: newPos.y }
+                });
+              }
+            )
+          )}
 
-      </Layer>
-    </Stage>
+          {lamps.map((lamp, i) =>
+            renderLamp(
+              lamp,
+              i,
+              false,
+              () => {
+                if (selectedTool === 'select') {
+                  setSelectedElement({ type: 'object', data: lamp });
+                  setEditMode(true);
+                }
+              },
+              selectedElement?.type === 'object' && selectedElement.data.id === lamp.id,
+              (e) => {
+                const newPos = e.target.position();
+                handleObjectUpdate({
+                  ...lamp,
+                  position: { x: newPos.x, y: newPos.y }
+                });
+              }
+            )
+          )}
+
+          {pendingObject && (() => {
+            switch (pendingObject.type) {
+              case 'sofa': return renderSofa(pendingObject, 'preview', true);
+              case 'bed': return renderBed(pendingObject, 'preview', true);
+              case 'door': return renderDoor(pendingObject, 'preview', true);
+              case 'window': return renderWindow(pendingObject, 'preview', true);
+              case 'grill': return renderGrill(pendingObject, 'preview', true);
+              case 'lamp': return renderLamp(pendingObject, 'preview', true);
+              default: return null;
+            }
+          })()}
+        </Layer>
+      </Stage>
     </>
   );
 };

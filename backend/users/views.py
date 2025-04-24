@@ -1,10 +1,12 @@
-from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.tokens import RefreshToken, TokenError
+from rest_framework_simplejwt.exceptions import InvalidToken
 from rest_framework.permissions import IsAuthenticated
 
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from backend.db import db  # MongoDB kapcsolat
+from datetime import datetime
 
 from users.auth import MongoDBJWTAuthentication
 from bson import ObjectId
@@ -15,6 +17,38 @@ from django.utils.decorators import method_decorator
 import bcrypt
 
 @method_decorator(csrf_exempt, name='dispatch') # CSRF védelem kikapcsolása
+
+class CustomRefreshView(APIView):
+    def post(self, request):
+        refresh_token = request.data.get("refresh")
+        if not refresh_token:
+            print("Missing refresh token")
+            return Response({"error": "Refresh token is missing"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            token = RefreshToken(refresh_token)
+            user_id = token.get("user_id")
+
+            print(f"Refresh token accepted for user_id: {user_id} at {datetime.now()}")
+
+            user = db["users"].find_one({"_id": ObjectId(user_id)})
+            if not user:
+                print("User not found in DB")
+                return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+            new_refresh = RefreshToken()
+            new_refresh["user_id"] = str(user["_id"])
+            new_refresh["username"] = user["username"]
+
+            return Response({
+                "access": str(new_refresh.access_token),
+                "refresh": str(new_refresh)
+            }, status=status.HTTP_200_OK)
+
+        except TokenError as e:
+            print(f"TokenError: {e} at {datetime.now()}")
+            return Response({"error": "Invalid or expired refresh token"}, status=status.HTTP_401_UNAUTHORIZED)
+
 
 # TESZT JWT TOKENHEZ
 class ProtectedView(APIView):

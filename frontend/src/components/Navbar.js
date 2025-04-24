@@ -4,7 +4,8 @@ import { FaUserCircle } from "react-icons/fa";
 import "../styles/Navbar.css";
 import Login from "./Login";
 import Register from "./Register";
-import { logoutUser } from "../api/api";
+import { logoutUser } from "../api/api"
+import { toast } from "react-toastify";
 
 const Navbar = () => {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
@@ -15,6 +16,41 @@ const Navbar = () => {
 
   const navigate = useNavigate();
 
+  useEffect(() => {
+    const reason = localStorage.getItem("logout_reason");
+    if (reason === "session_expired") {
+      toast.error("Your session expired. Please log in again.", {
+        autoClose: false,
+        closeOnClick: true,
+        draggable: false,
+        position: "top-center",
+      });
+    
+      localStorage.removeItem("logout_reason");
+      localStorage.removeItem("user");
+      setUser(null);
+    }
+  }, []);
+
+  useEffect(() => {
+    const handleSessionExpiration = () => {
+      const reason = localStorage.getItem("logout_reason");
+      const userData = localStorage.getItem("user");
+  
+      if (!userData || reason === "session_expired") {
+        setUser(null); 
+        localStorage.removeItem("logout_reason");
+      }
+    };
+  
+    handleSessionExpiration();
+    window.addEventListener("focus", handleSessionExpiration);
+  
+    return () => {
+      window.removeEventListener("focus", handleSessionExpiration);
+    };
+  }, []);
+  
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {

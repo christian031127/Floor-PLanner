@@ -1,9 +1,10 @@
 import { React, Fragment } from 'react';
+// eslint-disable-next-line no-unused-vars
 import { Line, Circle } from 'react-konva';
 
 const WALL_THICKNESS = 25;
 
-export function renderWall(wall, key, color = 'gray') {
+export function renderWall(wall, key, color = 'gray', onClick = null) {
     const dx = wall.end.x - wall.start.x;
     const dy = wall.end.y - wall.start.y;
     const len = Math.hypot(dx, dy);
@@ -13,7 +14,7 @@ export function renderWall(wall, key, color = 'gray') {
     const dirY = dy / len;
     const normX = dirY;
     const normY = -dirX;
-    const half = WALL_THICKNESS / 2;
+    const half = (wall.thickness || WALL_THICKNESS) / 2;
 
     const p1 = { x: wall.start.x + normX * half, y: wall.start.y + normY * half };
     const p2 = { x: wall.end.x + normX * half, y: wall.end.y + normY * half };
@@ -29,6 +30,7 @@ export function renderWall(wall, key, color = 'gray') {
                 fill={color}
                 stroke={color}
                 strokeWidth={1}
+                onClick={onClick || undefined}
             />
             {/* <Circle key={`wall-${key}-p1`} x={p1.x} y={p1.y} radius={3} fill="black" />
             <Circle key={`wall-${key}-p2`} x={p2.x} y={p2.y} radius={3} fill="black" />

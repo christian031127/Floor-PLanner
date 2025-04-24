@@ -8,6 +8,7 @@ const ToolPanel = ({
   selectedTool,
   setSelectedTool,
   editMode,
+  setEditMode,
   selectedWall,
   setWallThickness,
   deleteWall,
@@ -17,16 +18,23 @@ const ToolPanel = ({
   walls,
   doors,
   windows,
-  beds,
-  sofas,
-  grills,
-  lamps,
+  beds, setBeds,
+  sofas, setSofas,
+  grills, setGrills,
+  lamps, setLamps,
 
   planName,
   setPlanName,
   resetPlan,
   planId,
   setPlanId,
+
+  elements,
+  setElements,
+  selectedElement,
+  setSelectedElement,
+  handleElementUpdate,
+  handleObjectUpdate
 
 }) => {
 
@@ -310,46 +318,239 @@ const ToolPanel = ({
               </div>
             </div>
           )}
-
-          {/* <div className="save-plan-section">
-            <input
-              type="text"
-              placeholder="Plan name"
-              value={planName}
-              onChange={(e) => setPlanName(e.target.value)}
-              onClick={(e) => e.stopPropagation()}
-              onMouseDown={(e) => e.stopPropagation()}
-            />
-            <button className="toolbar-button save" onClick={handleSavePlan}>
-              <FaSave /> Save Plan
-            </button>
-          </div> */}
         </>
       ) : (
         <>
-          <div className="wall-editor">
-            <label>Thickness: {selectedWall?.thickness || 10}</label>
-            <input
-              type="range"
-              min="5"
-              max="30"
-              value={selectedWall?.thickness || 10}
-              onChange={(e) => setWallThickness(parseInt(e.target.value))}
-              onMouseDown={(e) => e.stopPropagation()}
-              onClick={(e) => e.stopPropagation()}
-            />
+          {/* Wall Property Sheet */}
+          {editMode && selectedTool === "select" && selectedElement?.type === "wall" && (
+            <div className="wall-editor" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <div>
+                <label>Thickness: {selectedElement.data.thickness}</label>
+                <input
+                  type="range"
+                  min="20"
+                  max="30"
+                  value={selectedElement.data.thickness}
+                  onChange={(e) => setWallThickness(parseInt(e.target.value))}
+                />
+              </div>
 
-            <button className="toolbar-button delete" onClick={deleteWall}>
-              <FaTrash /> Delete
-            </button>
-            <button className="toolbar-button" onClick={exitEditMode}>
-              <FaArrowLeft /> Back
-            </button>
-          </div>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginTop: '8px' }}>
+                <button
+                  className="toolbar-button icon-only"
+                  onClick={() => {
+                    setSelectedElement(null);
+                    exitEditMode();
+                  }}
+
+                  title="Back"
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                >
+                  <FaArrowLeft />
+                </button>
+                <button
+                  className="toolbar-button icon-only delete"
+                  onClick={deleteWall}
+                  title="Delete"
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                >
+                  <FaTrash />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Door/Window Property Sheet */}
+          {editMode && selectedTool === "select" && selectedElement?.type === "element" && (
+            <div className="element-editor" style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+
+              {/* Width */}
+              <div>
+                <label>Width: {selectedElement.data.length || 40}</label>
+                <input
+                  type="range"
+                  min="40"
+                  max="80"
+                  step="1"
+                  value={selectedElement.data.length || 40}
+                  onChange={(e) =>
+                    handleElementUpdate({
+                      ...selectedElement.data,
+                      length: parseInt(e.target.value)
+                    })
+                  }
+                />
+              </div>
+
+              {/* Color */}
+              <div>
+                <label>Color:</label>
+                <div style={{ display: 'flex', gap: '10px', marginTop: '4px' }}>
+                  {(selectedElement.data.type === "door"
+                    ? ["#F5F5F5", "brown", "#333"]
+                    : ["#F5F5F5", "lightblue", "skyblue"]
+                  ).map((color) => (
+                    <div
+                      key={color}
+                      style={{
+                        width: 24,
+                        height: 24,
+                        backgroundColor: color,
+                        borderRadius: '50%',
+                        border: selectedElement.data.fill === color ? "2px solid black" : "1px solid #ccc",
+                        cursor: 'pointer'
+                      }}
+                      onClick={() =>
+                        handleElementUpdate({
+                          ...selectedElement.data,
+                          fill: color
+                        })
+                      }
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Buttons */}
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginTop: '8px' }}>
+                <button
+                  className="toolbar-button icon-only"
+                  onClick={() => {
+                    setElements((prev) =>
+                      prev.map((el) =>
+                        el.id === selectedElement.data.id
+                          ? selectedElement.data
+                          : el
+                      )
+                    );
+                    setSelectedElement(null);
+                    setEditMode(false);
+                  }}
+
+                  title="Back"
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                >
+                  <FaArrowLeft />
+                </button>
+                <button
+                  className="toolbar-button icon-only delete"
+                  onClick={() => {
+                    const updated = elements.filter((el) => el !== selectedElement.data);
+                    setElements(updated);
+                    setSelectedElement(null);
+                    setEditMode(false);
+                  }}
+                  title="Delete"
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                >
+                  <FaTrash />
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Indoor/Outdoor Objects Property Sheet */}
+          {editMode && selectedTool === "select" && selectedElement?.type === "object" && (
+            <div className="object-editor" style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                <label style={{ marginBottom: '4px' }}>
+                  Size: {selectedElement.data.size || 1.5}
+                </label>
+                <input
+                  type="range"
+                  min="1"
+                  max="2"
+                  step="0.1"
+                  value={selectedElement.data.size || 1.5}
+                  onChange={(e) => {
+                    const updated = { ...selectedElement.data, size: parseFloat(e.target.value) };
+                    handleObjectUpdate(updated);
+                  }}
+                />
+              </div>
+
+              <div>
+                <label>Angle: {(((selectedElement.data.angle * 180 / Math.PI) + 360) % 360).toFixed(0)}°</label>
+                <input
+                  type="range"
+                  min="0"
+                  max="359"
+                  step="1"
+                  value={(((selectedElement.data.angle * 180 / Math.PI) + 360) % 360).toFixed(0)}
+                  onChange={(e) => {
+                    const angleInRadians = parseFloat(e.target.value) * Math.PI / 180;
+                    const updated = { ...selectedElement.data, angle: angleInRadians };
+                    handleObjectUpdate(updated);
+                  }}
+
+                />
+              </div>
+
+              <div>
+                <label>Color:</label>
+                <div style={{ display: 'flex', gap: '10px', marginTop: '4px' }}>
+                  {["#888", "#8B4513", "#800020"].map((color) => (
+                    <div
+                      key={color}
+                      style={{
+                        width: 24,
+                        height: 24,
+                        backgroundColor: color,
+                        borderRadius: '50%',
+                        border: selectedElement.data.fill === color ? "2px solid black" : "1px solid #ccc",
+                        cursor: 'pointer'
+                      }}
+                      onClick={() => {
+                        const updated = { ...selectedElement.data, fill: color };
+                        handleObjectUpdate(updated);
+                      }}
+
+
+                    />
+                  ))}
+                </div>
+              </div>
+
+
+              {/* Buttons */}
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginTop: '8px' }}>
+                <button
+                  className="toolbar-button icon-only"
+                  onClick={() => {
+                    setSelectedElement(null);
+                    setEditMode(false);
+                  }}
+                  title="Back"
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                >
+                  <FaArrowLeft />
+                </button>
+                <button
+                  className="toolbar-button icon-only delete"
+                  onClick={() => {
+                    setBeds((prev) => prev.filter((el) => el !== selectedElement.data));
+                    setSofas((prev) => prev.filter((el) => el !== selectedElement.data));
+                    setGrills((prev) => prev.filter((el) => el !== selectedElement.data));
+                    setLamps((prev) => prev.filter((el) => el !== selectedElement.data));
+                    setSelectedElement(null);
+                    setEditMode(false);
+                  }}
+                  title="Delete"
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                >
+                  <FaTrash />
+                </button>
+              </div>
+            </div>
+          )}
         </>
-      )}
-    </div>
+      )
+      }
+    </div >
   );
 };
 
 export default ToolPanel;
+
+

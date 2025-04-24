@@ -1,81 +1,110 @@
 import React from 'react';
-import { Group, Rect, Line, Ellipse, Circle, Arc } from 'react-konva';
+import tinycolor from 'tinycolor2'; // Import tinycolor for color manipulation
+import { Group, Rect, Line, Ellipse, Circle, Arc } from 'react-konva'; // Import Konva components for rendering shapes
 
-export function renderSofa(sofa, i, preview = false) {
+// Render Sofa
+export function renderSofa(sofa, i, preview = false, onClick, isSelected = false, onDragMove = null) {
   const x = sofa.position.x;
   const y = sofa.position.y;
-  const rotation = sofa.angle * 180 / Math.PI;
-  const scale = 1.7;
 
-  const colorBackrest = preview ? 'rgba(102,102,102,0.15)' : '#666';
-  const colorArmrest = preview ? 'rgba(85,85,85,0.15)' : '#555';
-  const colorSeatBase = preview ? 'rgba(136,136,136,0.1)' : '#888';
-  const colorCushion = preview ? 'rgba(170,170,170,0.1)' : '#aaa';
+  const rotation = ((sofa.angle * 180 / Math.PI + 360) + 360) % 360;
+  const scale = (sofa.size || 1.7) * (isSelected ? 1.05 : 1);
+
+  const baseColor = sofa.fill || '#888';
+  const finalBaseColor = preview ? tinycolor(baseColor).setAlpha(0.4).toRgbString() : baseColor;
+
+  const backColor = darkenColor(finalBaseColor, 10);
+  const armColor = darkenColor(finalBaseColor, 10);
+  const seatColor = lightenColor(finalBaseColor, 5);
+  const cushionColor = darkenColor(finalBaseColor, 5);
 
   return (
-    <Group key={`sofa-${i}`} x={x} y={y} rotation={rotation}>
+    <Group
+      key={`sofa-${i}`}
+      x={x}
+      y={y}
+      rotation={rotation}
+      onClick={onClick}
+      opacity={isSelected ? 0.7 : 1}
+      draggable={isSelected}
+      onDragMove={onDragMove}>
+
       {/* Háttámla */}
       <Rect
         x={-30 * scale}
         y={-20 * scale}
         width={60 * scale}
         height={6 * scale}
-        fill={colorBackrest}
-      />
+        fill={backColor} />
+
       {/* Karfák */}
       <Rect
         x={-30 * scale}
         y={-14 * scale}
         width={6 * scale}
         height={28 * scale}
-        fill={colorArmrest}
-      />
+        fill={armColor} />
+
       <Rect
         x={24 * scale}
         y={-14 * scale}
         width={6 * scale}
         height={28 * scale}
-        fill={colorArmrest}
-      />
+        fill={armColor} />
+
       {/* Ülőrész háttér */}
       <Rect
         x={-24 * scale}
         y={-14 * scale}
         width={48 * scale}
         height={28 * scale}
-        fill={colorSeatBase}
-      />
+        fill={seatColor} />
+
       {/* Ülőpárnák */}
       <Rect
         x={-22 * scale}
         y={-12 * scale}
         width={20 * scale}
         height={24 * scale}
-        fill={colorCushion}
-      />
+        fill={cushionColor} />
+
       <Rect
         x={2 * scale}
         y={-12 * scale}
         width={20 * scale}
         height={24 * scale}
-        fill={colorCushion}
-      />
+        fill={cushionColor} />
+
     </Group>
   );
 }
 
-export function renderBed(bed, i, preview = false) {
+// Render Bed
+export function renderBed(bed, i, preview = false, onClick, isSelected = false, onDragMove = null) {
   const { x, y } = bed.position;
-  const rotation = bed.angle * 180 / Math.PI;
-  const scale = 1.6;
 
-  const mattressColor = preview ? 'rgba(255,255,255,0.3)' : 'lightgray';
-  const outlineColor = preview ? 'rgba(0,0,0,0.2)' : 'black';
-  const pillowColor = preview ? 'rgba(255,255,255,0.4)' : '#7a857b';
-  const blanketColor = preview ? 'rgba(0,0,0,0.05)' : 'grey';
+  const rotation = ((bed.angle * 180 / Math.PI + 360) + 360) % 360;
+  const scale = (bed.size || 1.4) * (isSelected ? 1.05 : 1);
+
+  const baseColor = bed.fill || '#888';
+  const finalBaseColor = preview ? tinycolor(baseColor).setAlpha(0.4).toRgbString() : baseColor;
+
+  const mattressColor = darkenColor(finalBaseColor, 10);
+  const outlineColor = darkenColor(finalBaseColor, 15);
+  const pillowColor = lightenColor(finalBaseColor, 15);
+  const blanketColor = lightenColor(finalBaseColor, 20);
 
   return (
-    <Group key={`bed-${i}`} x={x} y={y} rotation={rotation}>
+    <Group
+      key={`bed-${i}`}
+      x={x}
+      y={y}
+      rotation={rotation}
+      onClick={onClick}
+      opacity={isSelected ? 0.7 : 1}
+      draggable={isSelected}
+      onDragMove={onDragMove}>
+
       {/* Matrac */}
       <Rect
         x={-35 * scale}
@@ -126,19 +155,32 @@ export function renderBed(bed, i, preview = false) {
   );
 }
 
-export function renderLamp(lamp, i, preview = false) {
+// Render Lamp
+export function renderLamp(lamp, i, preview = false, onClick, isSelected = false, onDragMove = null) {
   const x = lamp.position.x;
   const y = lamp.position.y;
-  const rotation = lamp.angle * 180 / Math.PI;
-  const s = 1.1;
 
-  const poleColor = preview ? 'rgba(105,105,105,0.2)' : '#444';
-  const lightColor = preview ? 'rgba(255,235,59,0.2)' : '#ffeb3b';
-  const capColor = preview ? 'rgba(34,34,34,0.2)' : '#222';
-  const baseColor = preview ? 'rgba(50,50,50,0.2)' : '#333';
+  const rotation = ((lamp.angle * 180 / Math.PI + 360) + 360) % 360;
+  const s = (lamp.size || 1.2) * (isSelected ? 1.05 : 1);
+
+  const baseColor = lamp.fill || '#888';
+  const finalBaseColor = preview ? tinycolor(baseColor).setAlpha(0.4).toRgbString() : baseColor;
+
+  const poleColor = darkenColor(finalBaseColor, 5);
+  const lightColor = lightenColor(finalBaseColor, 50);
 
   return (
-    <Group key={`lamp-${i}`} x={x} y={y} rotation={rotation} offsetY={-10 * s}>
+    <Group
+      key={`lamp-${i}`}
+      x={x}
+      y={y}
+      rotation={rotation}
+      offsetY={-10 * s}
+      onClick={onClick}
+      opacity={isSelected ? 0.7 : 1}
+      draggable={isSelected}
+      onDragMove={onDragMove}>
+
       {/* Oszlop */}
       <Rect
         x={-2 * s}
@@ -165,7 +207,7 @@ export function renderLamp(lamp, i, preview = false) {
         outerRadius={8 * s}
         angle={180}
         rotation={0}
-        fill={capColor}
+        fill={poleColor}
       />
 
       {/* Talpazat */}
@@ -174,26 +216,40 @@ export function renderLamp(lamp, i, preview = false) {
         y={-2 * s}
         width={12 * s}
         height={4 * s}
-        fill={baseColor}
+        fill={poleColor}
       />
     </Group>
   );
 }
 
-export function renderGrill(grill, i, preview = false) {
+// Render Grill
+export function renderGrill(grill, i, preview = false, onClick, isSelected = false, onDragMove = null) {
   const x = grill.position.x;
   const y = grill.position.y;
-  const rotation = grill.angle * 180 / Math.PI;
-  const scale = 1.5;
 
-  const bowlColor = preview ? 'rgba(68,68,68,0.2)' : '#444';
-  const lidColor = preview ? 'rgba(34,34,34,0.2)' : '#222';
-  const gridColor = preview ? 'rgba(187,187,187,0.3)' : '#bbb';
-  const legColor = preview ? 'rgba(51,51,51,0.2)' : '#333';
-  const handleColor = preview ? 'rgba(153,153,153,0.3)' : '#999';
+  const rotation = ((grill.angle * 180 / Math.PI + 360) + 360) % 360;
+  const scale = (grill.size || 1.5) * (isSelected ? 1.05 : 1);
+
+  const baseColor = grill.fill || '#888';
+  const finalBaseColor = preview ? tinycolor(baseColor).setAlpha(0.4).toRgbString() : baseColor;
+
+  const bowlColor = darkenColor(finalBaseColor, 15);
+  const lidColor = darkenColor(finalBaseColor, 20);
+  const gridColor = lightenColor(finalBaseColor, 10);
+  const legColor = darkenColor(finalBaseColor, 10);
+  const handleColor = lightenColor(finalBaseColor, 20);
 
   return (
-    <Group key={`grill-${i}`} x={x} y={y} rotation={rotation}>
+    <Group
+      key={`grill-${i}`}
+      x={x}
+      y={y}
+      rotation={rotation}
+      onClick={onClick}
+      opacity={isSelected ? 0.7 : 1}
+      draggable={isSelected}
+      onDragMove={onDragMove}>
+
       {/* Grill tálca */}
       <Ellipse radiusX={20 * scale} radiusY={14 * scale} fill={bowlColor} />
 
@@ -237,4 +293,14 @@ export function renderGrill(grill, i, preview = false) {
     </Group>
   );
 }
+
+// Utility functions to lighten and darken colors
+function lightenColor(hex, amount = 20) {
+  return tinycolor(hex).lighten(amount).toString();
+}
+
+function darkenColor(hex, amount = 20) {
+  return tinycolor(hex).darken(amount).toString();
+}
+
 
