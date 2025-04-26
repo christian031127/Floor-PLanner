@@ -4,6 +4,7 @@ import { getPlan, getPlans, deletePlan, updatePlan } from "../api/api";
 import { FaFolderOpen, FaEdit, FaTrash } from "react-icons/fa";
 import "../styles/MyPlans.css";
 import { useNavigate } from "react-router-dom";
+import {toast } from "react-toastify";
 
 const MyPlans = () => {
   const [plans, setPlans] = useState([]);
@@ -44,9 +45,10 @@ const MyPlans = () => {
 
   const handleRename = async (id, newName) => {
     try {
-      await updatePlan(id, newName);
+      await updatePlan(id, { name: newName });
       setPlans((prev) => prev.map(p => p.id === id ? { ...p, name: newName } : p));
       setEditingId(null);
+      toast.success("Plan renamed successfully!");
     } catch (err) {
       console.error("Hiba atnevezes kozben:", err);
     }

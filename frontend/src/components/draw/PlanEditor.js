@@ -328,36 +328,6 @@ const PlanEditor = ({
     return null;
   };
 
-  const handleElementDragMove = (element, setElementList) => (e) => {
-    const { x, y } = e.target.getStage().getPointerPosition();
-  
-    const wall = element.wall;
-    if (!wall) return;
-  
-    const dx = wall.end.x - wall.start.x;
-    const dy = wall.end.y - wall.start.y;
-    const wallLength = Math.sqrt(dx * dx + dy * dy);
-  
-    const vectorToPoint = {
-      x: x - wall.start.x,
-      y: y - wall.start.y
-    };
-  
-    const projection = (vectorToPoint.x * dx + vectorToPoint.y * dy) / wallLength;
-    const clamped = Math.max(0, Math.min(projection, wallLength));
-  
-    const newPosition = {
-      x: wall.start.x + dx * (clamped / wallLength),
-      y: wall.start.y + dy * (clamped / wallLength)
-    };
-  
-    const updated = { ...element, position: newPosition };
-  
-    setElementList((prev) => prev.map((el) => (el.id === element.id ? updated : el)));
-    setSelectedElement({ type: "element", data: updated });
-  };
-  
-
   const distanceToLineSegment = (A, B, P) => {
     const dx = B.x - A.x;
     const dy = B.y - A.y;
@@ -444,7 +414,6 @@ const PlanEditor = ({
           <Circle key={`debug-${i}-${Math.round(pt.x)}-${Math.round(pt.y)}`} x={pt.x} y={pt.y} radius={5} fill="red" />
         ))} */}
 
-
           {elements
             .filter(el => el.type === 'door')
             .map((door, i) =>
@@ -460,7 +429,7 @@ const PlanEditor = ({
                   }
                 },
                 selectedElement?.type === 'element' && selectedElement.data.id === door.id,
-                handleElementDragMove(door, setDoors)
+                handleElementUpdate
               )
             )}
 
@@ -478,7 +447,8 @@ const PlanEditor = ({
                     setEditMode(true);
                   }
                 },
-                selectedElement?.type === 'element' && selectedElement.data.id === win.id
+                selectedElement?.type === 'element' && selectedElement.data.id === win.id,
+                handleElementUpdate
               )
             )}
 
@@ -494,13 +464,7 @@ const PlanEditor = ({
                 }
               },
               selectedElement?.type === 'object' && selectedElement.data.id === sofa.id,
-              (e) => {
-                const newPos = e.target.position();
-                handleObjectUpdate({
-                  ...sofa,
-                  position: { x: newPos.x, y: newPos.y }
-                });
-              }
+              handleObjectUpdate
             )
           )}
 
@@ -516,13 +480,7 @@ const PlanEditor = ({
                 }
               },
               selectedElement?.type === 'object' && selectedElement.data.id === bed.id,
-              (e) => {
-                const newPos = e.target.position();
-                handleObjectUpdate({
-                  ...bed,
-                  position: { x: newPos.x, y: newPos.y }
-                });
-              }
+              handleObjectUpdate
             )
           )}
 
@@ -538,13 +496,7 @@ const PlanEditor = ({
                 }
               },
               selectedElement?.type === 'object' && selectedElement.data.id === grill.id,
-              (e) => {
-                const newPos = e.target.position();
-                handleObjectUpdate({
-                  ...grill,
-                  position: { x: newPos.x, y: newPos.y }
-                });
-              }
+              handleObjectUpdate
             )
           )}
 
@@ -560,13 +512,7 @@ const PlanEditor = ({
                 }
               },
               selectedElement?.type === 'object' && selectedElement.data.id === lamp.id,
-              (e) => {
-                const newPos = e.target.position();
-                handleObjectUpdate({
-                  ...lamp,
-                  position: { x: newPos.x, y: newPos.y }
-                });
-              }
+              handleObjectUpdate
             )
           )}
 

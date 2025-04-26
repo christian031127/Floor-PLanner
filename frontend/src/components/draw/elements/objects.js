@@ -1,6 +1,9 @@
+// Import react components
 import React from 'react';
-import tinycolor from 'tinycolor2'; // Import tinycolor for color manipulation
-import { Group, Rect, Line, Ellipse, Circle, Arc } from 'react-konva'; // Import Konva components for rendering shapes
+// Import tinycolor for color manipulation
+import tinycolor from 'tinycolor2';
+// Import Konva components
+import { Group, Rect, Line, Ellipse, Circle, Arc } from 'react-konva';
 
 // Render Sofa
 export function renderSofa(sofa, i, preview = false, onClick, isSelected = false, onDragMove = null) {
@@ -27,7 +30,19 @@ export function renderSofa(sofa, i, preview = false, onClick, isSelected = false
       onClick={onClick}
       opacity={isSelected ? 0.7 : 1}
       draggable={isSelected}
-      onDragMove={onDragMove}>
+      onDragMove={(e) => {
+        if (onDragMove) {
+          const pos = e.target.position();
+          onDragMove({
+            id: sofa.id,
+            type: sofa.type,
+            position: { x: pos.x, y: pos.y },
+            angle: sofa.angle,
+            size: sofa.size,
+            fill: sofa.fill
+          });
+        }
+      }}>
 
       {/* Háttámla */}
       <Rect
@@ -103,7 +118,16 @@ export function renderBed(bed, i, preview = false, onClick, isSelected = false, 
       onClick={onClick}
       opacity={isSelected ? 0.7 : 1}
       draggable={isSelected}
-      onDragMove={onDragMove}>
+      onDragMove={(e) => {
+        if (onDragMove) {
+          const pos = e.target.position();
+          onDragMove({
+            ...bed,
+            position: { x: pos.x, y: pos.y }
+          });
+        }
+      }}
+    >
 
       {/* Matrac */}
       <Rect
@@ -179,7 +203,15 @@ export function renderLamp(lamp, i, preview = false, onClick, isSelected = false
       onClick={onClick}
       opacity={isSelected ? 0.7 : 1}
       draggable={isSelected}
-      onDragMove={onDragMove}>
+      onDragMove={(e) => {
+        if (onDragMove) {
+          const pos = e.target.position();
+          onDragMove({
+            ...lamp,
+            position: { x: pos.x, y: pos.y }
+          });
+        }
+      }}>
 
       {/* Oszlop */}
       <Rect
@@ -248,7 +280,15 @@ export function renderGrill(grill, i, preview = false, onClick, isSelected = fal
       onClick={onClick}
       opacity={isSelected ? 0.7 : 1}
       draggable={isSelected}
-      onDragMove={onDragMove}>
+      onDragMove={(e) => {
+        if (onDragMove) {
+          const pos = e.target.position();
+          onDragMove({
+            ...grill,
+            position: { x: pos.x, y: pos.y }
+          });
+        }
+      }}>
 
       {/* Grill tálca */}
       <Ellipse radiusX={20 * scale} radiusY={14 * scale} fill={bowlColor} />

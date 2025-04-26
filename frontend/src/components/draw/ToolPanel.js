@@ -1,49 +1,54 @@
+// Import React and useState for managing component state
 import React, { useState } from 'react';
+// Import icons from react-icons 
 import { FaMousePointer, FaDrawPolygon, FaTrash, FaArrowLeft, FaSave, FaDoorOpen, FaBed, FaCouch, FaLightbulb, FaFire, FaThLarge, FaFileExport } from 'react-icons/fa';
-
+// Import toast for notifications
+import { toast } from 'react-toastify';
+// Import styles for the tool panel
 import '../../styles/ToolPanel.css';
+// Import API functions for saving and updating plans
 import { createPlan, updatePlan } from '../../api/api';
 
 const ToolPanel = ({
-  selectedTool,
-  setSelectedTool,
-  editMode,
-  setEditMode,
-  selectedWall,
+  selectedTool, setSelectedTool,
+  editMode, setEditMode,
+  exitEditMode,
+
   setWallThickness,
   deleteWall,
-  exitEditMode,
+
   setIsInteractingWithUI,
   justSelectedRef,
+
   walls,
-  doors,
-  windows,
+  doors, setDoors,
+  windows, setWindows,
   beds, setBeds,
   sofas, setSofas,
   grills, setGrills,
   lamps, setLamps,
 
-  planName,
-  setPlanName,
+  planName, setPlanName,
   resetPlan,
-  planId,
-  setPlanId,
+  planId, setPlanId,
 
-  elements,
-  setElements,
-  selectedElement,
-  setSelectedElement,
+  elements, setElements,
+  selectedElement, setSelectedElement,
+
   handleElementUpdate,
   handleObjectUpdate
 
 }) => {
 
+  // State for modals
   const [showSaveModal, setShowSaveModal] = useState(false);
+  // State for reset confirmation modal
   const [showResetModal, setShowResetModal] = useState(false);
 
+  // Save Plan
   const handleSavePlan = async () => {
     if (!planName.trim()) {
-      alert("Please enter a plan name!");
+      toast.error("Please enter a plan name!");
       return;
     }
 
@@ -73,21 +78,23 @@ const ToolPanel = ({
           x: wall.end.x - wall.start.x,
           y: wall.end.y - wall.start.y
         };
-        const wallLength = Math.hypot(wallVec.x, wallVec.y);
 
         const doorVec = {
           x: door.position.x - wall.start.x,
           y: door.position.y - wall.start.y
         };
 
-        const dot = (doorVec.x * wallVec.x + doorVec.y * wallVec.y) / wallLength;
-        const position_x = dot / wallLength;
+        const dot = (doorVec.x * wallVec.x + doorVec.y * wallVec.y);
+        const wallLengthSquared = wallVec.x * wallVec.x + wallVec.y * wallVec.y;
+        const position_x = dot / wallLengthSquared;
 
         return {
           type: "door",
           wall_id: door.wallId,
-          position_x,
-          flip: door.flip || false
+          position_x: Math.max(0, Math.min(1, position_x)),
+          flip: door.flip || false,
+          length: door.length || 50,
+          fill: door.fill || "#F5F5F5"
         };
       }).filter(Boolean);
 
@@ -99,20 +106,22 @@ const ToolPanel = ({
           x: wall.end.x - wall.start.x,
           y: wall.end.y - wall.start.y
         };
-        const wallLength = Math.hypot(wallVec.x, wallVec.y);
 
         const windowVec = {
           x: window.position.x - wall.start.x,
           y: window.position.y - wall.start.y
         };
 
-        const dot = (windowVec.x * wallVec.x + windowVec.y * wallVec.y) / wallLength;
-        const position_x = dot / wallLength;
+        const dot = (windowVec.x * wallVec.x + windowVec.y * wallVec.y);
+        const wallLengthSquared = wallVec.x * wallVec.x + wallVec.y * wallVec.y;
+        const position_x = dot / wallLengthSquared;
 
         return {
           type: "window",
           wall_id: window.wallId,
-          position_x
+          position_x: Math.max(0, Math.min(1, position_x)),
+          length: window.length || 60,
+          fill: window.fill || "#F5F5F5"
         };
       }).filter(Boolean);
 
@@ -124,28 +133,39 @@ const ToolPanel = ({
           type: "bed",
           position_x: o.position.x,
           position_y: o.position.y,
-          angle: o.angle
+          angle: o.angle,
+          size: o.size || 1.4,
+          fill: o.fill || "#888",
+          id: o.id || `bed-${o.position.x}-${o.position.y}`
         })),
         ...sofas.map(o => ({
           type: "sofa",
           position_x: o.position.x,
           position_y: o.position.y,
-          angle: o.angle
+          angle: o.angle,
+          size: o.size || 1.7,
+          fill: o.fill || "#888",
+          id: o.id || `sofa-${o.position.x}-${o.position.y}`
         })),
         ...grills.map(o => ({
           type: "grill",
           position_x: o.position.x,
           position_y: o.position.y,
-          angle: o.angle
+          angle: o.angle,
+          size: o.size || 1.5,
+          fill: o.fill || "#888",
+          id: o.id || `grill-${o.position.x}-${o.position.y}`
         })),
         ...lamps.map(o => ({
           type: "lamp",
           position_x: o.position.x,
           position_y: o.position.y,
-          angle: o.angle
+          angle: o.angle,
+          size: o.size || 1.2,
+          fill: o.fill || "#888",
+          id: o.id || `lamp-${o.position.x}-${o.position.y}`
         }))
       ];
-
 
       if (planId) {
         await updatePlan(planId, {
@@ -154,7 +174,7 @@ const ToolPanel = ({
           elements,
           objects
         });
-        alert("Plan updated!");
+        toast.success("Plan updated!");
       } else {
         const result = await createPlan({
           name: planName.trim(),
@@ -163,16 +183,15 @@ const ToolPanel = ({
           objects
         });
         setPlanId(result.id);
-        alert("Plan saved!");
+        toast.success("Plan saved!");
       }
 
       setShowSaveModal(false);
     } catch (error) {
       console.error("Error saving plan:", error);
-      alert("Error saving plan!");
+      toast.error("Error saving plan!");
     }
   };
-
 
   return (
     <div
@@ -273,7 +292,7 @@ const ToolPanel = ({
             <button
               className="toolbar-button icon-only"
               title="Export plan"
-              onClick={() => alert("Export not implemented yet.")}
+              onClick={() => toast.info("Export not implemented yet.")}
             >
               <FaFileExport />
             </button>
@@ -293,7 +312,7 @@ const ToolPanel = ({
                   placeholder="Plan name"
                   value={planName}
                   onChange={(e) => setPlanName(e.target.value)}
-                  style={{ marginTop: "10px", width: "100%", padding: "6px" }}
+                  style={{ marginTop: "10px", width: "90%", padding: "6px" }}
                 />
                 <div className="modal-buttons">
                   <button onClick={handleSavePlan}>Save</button>
@@ -325,12 +344,14 @@ const ToolPanel = ({
           {editMode && selectedTool === "select" && selectedElement?.type === "wall" && (
             <div className="wall-editor" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
-                <label>Thickness: {selectedElement.data.thickness}</label>
+                <label>Thickness: {selectedElement.data.thickness || 25}</label>
                 <input
                   type="range"
                   min="20"
                   max="30"
-                  value={selectedElement.data.thickness}
+                  step="1"
+                  style={{ width: '80%' }}
+                  value={selectedElement.data.thickness || 25}
                   onChange={(e) => setWallThickness(parseInt(e.target.value))}
                 />
               </div>
@@ -372,6 +393,7 @@ const ToolPanel = ({
                   min="40"
                   max="80"
                   step="1"
+                  style={{ width: '80%' }}
                   value={selectedElement.data.length || 40}
                   onChange={(e) =>
                     handleElementUpdate({
@@ -393,8 +415,8 @@ const ToolPanel = ({
                     <div
                       key={color}
                       style={{
-                        width: 24,
-                        height: 24,
+                        width: 25,
+                        height: 25,
                         backgroundColor: color,
                         borderRadius: '50%',
                         border: selectedElement.data.fill === color ? "2px solid black" : "1px solid #ccc",
@@ -435,11 +457,17 @@ const ToolPanel = ({
                 <button
                   className="toolbar-button icon-only delete"
                   onClick={() => {
-                    const updated = elements.filter((el) => el !== selectedElement.data);
-                    setElements(updated);
+                    const deletedElementId = selectedElement.data.id;
+                    console.log("Deleted element:", deletedElementId);
+
+                    setElements((prev) => prev.filter((el) => el.id !== deletedElementId));
+                    setDoors((prev) => prev.filter((el) => el.id !== deletedElementId));
+                    setWindows((prev) => prev.filter((el) => el.id !== deletedElementId));
+
                     setSelectedElement(null);
                     setEditMode(false);
                   }}
+
                   title="Delete"
                   style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                 >
@@ -462,6 +490,7 @@ const ToolPanel = ({
                   min="1"
                   max="2"
                   step="0.1"
+                  style={{ width: '80%' }}
                   value={selectedElement.data.size || 1.5}
                   onChange={(e) => {
                     const updated = { ...selectedElement.data, size: parseFloat(e.target.value) };
@@ -477,13 +506,13 @@ const ToolPanel = ({
                   min="0"
                   max="359"
                   step="1"
+                  style={{ width: '80%' }}
                   value={(((selectedElement.data.angle * 180 / Math.PI) + 360) % 360).toFixed(0)}
                   onChange={(e) => {
                     const angleInRadians = parseFloat(e.target.value) * Math.PI / 180;
                     const updated = { ...selectedElement.data, angle: angleInRadians };
                     handleObjectUpdate(updated);
                   }}
-
                 />
               </div>
 
@@ -494,8 +523,8 @@ const ToolPanel = ({
                     <div
                       key={color}
                       style={{
-                        width: 24,
-                        height: 24,
+                        width: 25,
+                        height: 25,
                         backgroundColor: color,
                         borderRadius: '50%',
                         border: selectedElement.data.fill === color ? "2px solid black" : "1px solid #ccc",
@@ -505,13 +534,10 @@ const ToolPanel = ({
                         const updated = { ...selectedElement.data, fill: color };
                         handleObjectUpdate(updated);
                       }}
-
-
                     />
                   ))}
                 </div>
               </div>
-
 
               {/* Buttons */}
               <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginTop: '8px' }}>
