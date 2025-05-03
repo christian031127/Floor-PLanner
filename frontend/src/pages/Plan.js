@@ -3,6 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import ToolPanel from '../components/draw/ToolPanel';
 import PlanEditor from '../components/draw/PlanEditor';
+import { adjustWallEndpoints } from '../components/draw/elements/wall';
 // Import styles
 import '../styles/Plan.css';
 
@@ -26,6 +27,8 @@ const PlanPage = () => {
 
   const [planName, setPlanName] = useState('');
   const [planId, setPlanId] = useState(null);
+
+  const stageRef = useRef(null);
 
   const location = useLocation();
   const loadedPlan = location.state?.planData;
@@ -53,7 +56,9 @@ const PlanPage = () => {
         id: w.id,
       })) || [];
 
-      setWalls(convertedWalls);
+      const adjustedWalls = adjustWallEndpoints(convertedWalls).adjusted;
+      //const snappedWalls = snapWallEndpointsToOtherWalls(adjustedWalls);
+      setWalls(adjustedWalls);
 
       setDoors(
         loadedPlan.elements?.filter(e => e.type === 'door').map(e => {
@@ -166,63 +171,52 @@ const PlanPage = () => {
 
     const updatedWalls = walls.map((wall) =>
       wall === selectedElement.data
-        ? { ...wall, thickness: newThickness }
+        ? {
+          ...wall,
+          thickness: newThickness,
+          outerStart: undefined,
+          outerEnd: undefined,
+          innerStart: undefined,
+          innerEnd: undefined,
+        }
         : wall
     );
 
-    const updatedWall = updatedWalls.find(
-      (w) => w.start.x === selectedElement.data.start.x &&
-        w.start.y === selectedElement.data.start.y &&
-        w.end.x === selectedElement.data.end.x &&
-        w.end.y === selectedElement.data.end.y
-    );
+    // Újraillesztjük az összes falat
+    const { adjusted } = adjustWallEndpoints(updatedWalls);
+    setWalls(adjusted);
 
-    setWalls(updatedWalls);
-
+    const updatedWall = adjusted.find((w) => w.id === selectedElement.data.id);
     if (updatedWall) {
       setSelectedElement({ type: "wall", data: updatedWall });
 
-      setElements(prevElements =>
-        prevElements.map(el => {
-          if (el.wall?.id === updatedWall.id) {
-            return {
-              ...el,
-              wall: {
-                ...el.wall,
-                thickness: newThickness
-              }
-            };
-          }
-          return el;
-        })
+      // Frissítjük az elemeket is (ajtók, ablakok), ha vastagság számít nekik
+      setElements((prevElements) =>
+        prevElements.map((el) =>
+          el.wall?.id === updatedWall.id
+            ? { ...el, wall: { ...el.wall, thickness: newThickness } }
+            : el
+        )
       );
     }
-
-    //console.log(`Wall ${selectedElement.data.id} thickness updated to ${newThickness}, and linked elements updated.`);
   };
-
 
   // Delete wall
   const handleWallDelete = () => {
-    if (!selectedElement || selectedElement.type !== "wall") return;
+    if (selectedElement?.type === 'wall') {
+      const wallId = selectedElement.data.id;
 
-    const wallToDelete = selectedElement.data;
+      // Delete doors and windows associated with the wall
+      setDoors((prev) => prev.filter((el) => el.wallId !== wallId));
+      setWindows((prev) => prev.filter((el) => el.wallId !== wallId));
+      setElements((prev) => prev.filter((el) => el.wallId !== wallId));
 
-    const updatedWalls = walls.filter(wall => wall !== wallToDelete);
-    setWalls(updatedWalls);
+      // Delete the wall itself
+      setWalls((prev) => prev.filter((wall) => wall.id !== wallId));
 
-    // Delete associated doors and windows
-    const remainingDoors = doors.filter(door => door.wall !== wallToDelete);
-    const remainingWindows = windows.filter(window => window.wall !== wallToDelete);
-    setDoors(remainingDoors);
-    setWindows(remainingWindows);
-
-    // Delete associated elements
-    setElements(prev =>
-      prev.filter(el => el.wall !== wallToDelete)
-    );
-
-    setSelectedElement(null);
+      setSelectedElement(null);
+      setEditMode(false);
+    }
   };
 
   //--------------------------------------------------------------Element Property-----------------------------------------------------------------------------------
@@ -268,46 +262,6 @@ const PlanPage = () => {
   //---------------------------------------------------------------Object Property-----------------------------------------------------------------------------------
 
   // Update object (bed/sofa/grill/lamp) position or delete it
-  // const handleObjectUpdate = (updatedObject) => {
-  //   if (!selectedElement || selectedElement.type !== 'object') return;
-
-  //   const objectId = selectedElement.data.id;
-  //   if (!objectId) return;
-
-  //   const updateList = (list, setter) => {
-  //     if (updatedObject === null) {
-  //       // törlés
-  //       setter(list.filter(obj => obj.id !== objectId));
-  //     } else {
-  //       setter(list.map(obj => obj.id === objectId ? { ...obj, ...updatedObject } : obj));
-  //     }
-  //   };
-
-  //   switch (selectedElement.data.type) {
-  //     case 'bed':
-  //       updateList(beds, setBeds);
-  //       break;
-  //     case 'sofa':
-  //       updateList(sofas, setSofas);
-  //       break;
-  //     case 'grill':
-  //       updateList(grills, setGrills);
-  //       break;
-  //     case 'lamp':
-  //       updateList(lamps, setLamps);
-  //       break;
-  //     default:
-  //       return;
-  //   }
-
-  //   if (updatedObject !== null) {
-  //     const updatedFullObject = { ...selectedElement.data, ...updatedObject };
-  //     setSelectedElement({ type: 'object', data: updatedFullObject });
-  //   } else {
-  //     setSelectedElement(null);
-  //   }
-  // };
-
   const handleObjectUpdate = (updatedObject) => {
     if (!updatedObject?.type) {
       console.warn("Unknown object type:", updatedObject?.type);
@@ -370,6 +324,8 @@ const PlanPage = () => {
         setIsInteractingWithUI={setIsInteractingWithUI}
         justSelectedRef={justSelectedRef}
 
+        stageRef={stageRef}
+
         /* Update element or object */
         handleElementUpdate={handleElementUpdate}
         handleObjectUpdate={handleObjectUpdate}
@@ -424,6 +380,7 @@ const PlanPage = () => {
           handleSelectElement={setSelectedElement}
 
           planName={planName}
+          stageRef={stageRef}
         />
       </div>
     </div>

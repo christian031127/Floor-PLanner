@@ -8,6 +8,8 @@ import { toast } from 'react-toastify';
 import '../../styles/ToolPanel.css';
 // Import API functions for saving and updating plans
 import { createPlan, updatePlan } from '../../api/api';
+// Import jsPDF for exporting plans as PDF
+import jsPDF from 'jspdf';
 
 const ToolPanel = ({
   selectedTool, setSelectedTool,
@@ -32,7 +34,7 @@ const ToolPanel = ({
   resetPlan,
   planId, setPlanId,
 
-  elements, setElements,
+  setElements,
   selectedElement, setSelectedElement,
 
   handleElementUpdate,
@@ -40,6 +42,8 @@ const ToolPanel = ({
 
 }) => {
 
+  // State for the export modal
+  const [showExportModal, setShowExportModal] = useState(false);
   // State for modals
   const [showSaveModal, setShowSaveModal] = useState(false);
   // State for reset confirmation modal
@@ -193,6 +197,31 @@ const ToolPanel = ({
     }
   };
 
+  // Export functions
+  // Export as PNG and PDF
+  function handleExportPNG() {
+    const stage = window.stageRef?.current;
+    if (!stage) return;
+    const uri = stage.toDataURL({ pixelRatio: 2 });
+    const link = document.createElement('a');
+    link.download = 'floorplan.png';
+    link.href = uri;
+    link.click();
+    setShowExportModal(false);
+    toast.success("Exported successfully!");
+  }
+
+  function handleExportPDF() {
+    const stage = window.stageRef?.current;
+    if (!stage) return;
+    const uri = stage.toDataURL({ pixelRatio: 2 });
+    const pdf = new jsPDF({ orientation: 'landscape', unit: 'px', format: [stage.width(), stage.height()] });
+    pdf.addImage(uri, 'PNG', 0, 0, stage.width(), stage.height());
+    pdf.save('floorplan.pdf');
+    setShowExportModal(false);
+    toast.success("Exported successfully!");
+  }
+
   return (
     <div
       className="toolbar"
@@ -292,7 +321,7 @@ const ToolPanel = ({
             <button
               className="toolbar-button icon-only"
               title="Export plan"
-              onClick={() => toast.info("Export not implemented yet.")}
+              onClick={() => setShowExportModal(true)}
             >
               <FaFileExport />
             </button>
@@ -337,6 +366,26 @@ const ToolPanel = ({
               </div>
             </div>
           )}
+
+          {showExportModal && (
+            <div className="modal-overlay show">
+              <div className="modal slide-in">
+                <button
+                  onClick={() => setShowExportModal(false)}
+                  className="close-modal-button"
+                  aria-label="Close export modal"
+                >
+                  ✕
+                </button>
+                <p className="modal-title">Select export format!</p>
+                <div className="modal-buttons">
+                  <button className="export-button" onClick={handleExportPNG}>PNG</button>
+                  <button className="export-button" onClick={handleExportPDF}>PDF</button>
+                </div>
+              </div>
+            </div>
+          )}
+
         </>
       ) : (
         <>
@@ -344,7 +393,7 @@ const ToolPanel = ({
           {editMode && selectedTool === "select" && selectedElement?.type === "wall" && (
             <div className="wall-editor" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
-                <label>Thickness: {selectedElement.data.thickness || 25}</label>
+                <label>Thickness: {(selectedElement.data.thickness || 25)} cm</label>
                 <input
                   type="range"
                   min="20"
@@ -387,7 +436,7 @@ const ToolPanel = ({
 
               {/* Width */}
               <div>
-                <label>Width: {selectedElement.data.length || 40}</label>
+                <label>Width: {(selectedElement.data.length || 40)} cm</label>
                 <input
                   type="range"
                   min="40"

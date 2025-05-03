@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Stage, Layer, Rect, Circle } from 'react-konva';
+import { Stage, Layer, Rect, Circle, Line, Text } from 'react-konva';
 import GridOverlay from './GridOverlay';
 
 // Wall rendering and adjustment functions
-import { renderWall, adjustWallEndpoints } from './elements/wall';
+import { renderWall, adjustWallEndpoints, detectClosedAreas, calculateCentroid, calculatePolygonArea } from './elements/wall';
 
 // Door and window rendering functions
 import { renderDoor, renderWindow, DOOR_LENGTH, WINDOW_LENGTH } from './elements/door_window';
@@ -16,7 +16,6 @@ const SNAP_TOLERANCE = 0.07;
 
 const PlanEditor = ({
   selectedTool, setSelectedTool,
-  addWall,
   walls, setWalls,
   doors, setDoors,
   windows, setWindows,
@@ -24,29 +23,33 @@ const PlanEditor = ({
   beds, setBeds,
   grills, setGrills,
   lamps, setLamps,
-  selectedWall, setSelectedWall,
   isInteractingWithUI,
   justSelectedRef,
+  stageRef,
   planName,
   setSelectedElement,
   selectedElement,
-  elements, setElements, updatedElement, setEditMode,
+  elements, setElements, setEditMode,
   handleObjectUpdate, handleElementUpdate
 }) => {
 
-  // eslint-disable-next-line no-unused-vars
   const [drawing, setDrawing] = useState(false);
   const [startPoint, setStartPoint] = useState(null);
   const [previewWall, setPreviewWall] = useState(null);
-  // eslint-disable-next-line no-unused-vars
-  const [debugPoints, setDebugPoints] = useState([]);
+  //const [debugPoints, setDebugPoints] = useState([]);
   const [windowSize, setWindowSize] = useState({
     width: window.innerWidth - 250,
     height: window.innerHeight,
   });
 
+  const closedAreas = detectClosedAreas(walls);
+
   const [placementPhase, setPlacementPhase] = useState(false);
   const [pendingObject, setPendingObject] = useState(null);
+
+  useEffect(() => {
+    window.stageRef = stageRef;
+  }, [stageRef]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -98,7 +101,6 @@ const PlanEditor = ({
       setSelectedTool('select');
       return;
     }
-
 
     // First click on a pending object (sofa, bed, grill, lamp)
     if (pendingObject && placementPhase && ['sofa', 'bed', 'grill', 'lamp'].includes(pendingObject.type)) {
@@ -165,21 +167,31 @@ const PlanEditor = ({
         setStartPoint(snapped);
         setDrawing(true);
       } else if (previewWall) {
-        const newWall = {
-          ...previewWall,
-          id: `wall-${crypto.randomUUID()}`
-        };
 
-        const updated = [...walls, newWall];
-        const { adjusted, debug } = adjustWallEndpoints(updated);
+        //addWall(newWall);
 
-        setWalls(adjusted);
-        addWall(newWall);
+        if (previewWall) {
+          const newWall = { ...previewWall, id: `wall-${crypto.randomUUID()}` };
+          const updated = [...walls, newWall];
+          //const snappedWalls = snapWallEndpointsToOtherWalls(updated);
+          const { adjusted } = adjustWallEndpoints(updated);
 
-        setDebugPoints(debug);
-        setDrawing(false);
-        setStartPoint(null);
-        setPreviewWall(null);
+          adjusted.forEach((w, i) => {
+            console.log(`WALL ${i} (${w.id}):`);
+            console.log("  outerStart:", w.outerStart);
+            console.log("  outerEnd:  ", w.outerEnd);
+            console.log("  innerEnd:  ", w.innerEnd);
+            console.log("  innerStart:", w.innerStart);
+          });
+
+          setWalls(adjusted);
+
+          setDrawing(false);
+          setStartPoint(null);
+          setPreviewWall(null);
+        }
+
+        //setDebugPoints(debug);
       }
     }
   };
@@ -374,6 +386,7 @@ const PlanEditor = ({
       )}
 
       <Stage
+        ref={stageRef}
         width={windowSize.width}
         height={windowSize.height}
         onMouseDown={handleMouseDown}
@@ -384,8 +397,39 @@ const PlanEditor = ({
           <Rect x={0} y={0} width={windowSize.width} height={windowSize.height} fill="#f5e6d3" />
           <GridOverlay width={windowSize.width} height={windowSize.height} cellSize={25} />
 
-          {walls.map((wall) =>
-            renderWall(
+          {closedAreas.map((polygon, i) => (
+            <Line
+              key={`area-${polygon.map(pt => [pt.x, pt.y].join('-')).join('-')}`}
+              closed
+              fill="white"
+              opacity={0.7}
+              stroke="transparent"
+              points={polygon.flatMap(pt => [pt.x, pt.y])}
+            />
+          ))}
+
+          {closedAreas.map((polygon, i) => {
+            const area = calculatePolygonArea(polygon); // px²
+            const areaInM2 = (area / 10000).toFixed(2); // ha 100px = 1m, akkor 10000 px² = 1m²
+            const center = calculateCentroid(polygon);
+
+            return (
+              <Text
+                key={`area-label-${polygon.map(pt => [pt.x, pt.y].join('-')).join('-')}`}
+                x={center.x}
+                y={center.y}
+                text={`${areaInM2} m²`}
+                fontStyle='bold'
+                fontSize={15}
+                fill="black"
+                offsetX={50}
+                offsetY={-10}
+              />
+            );
+          })}
+
+          {walls.map((wall) => {
+            return renderWall(
               wall,
               wall.id,
               selectedTool === 'select' &&
@@ -400,8 +444,8 @@ const PlanEditor = ({
                   setEditMode(true);
                 }
               }
-            )
-          )}
+            );
+          })}
 
           {previewWall && (
             <>
@@ -411,8 +455,8 @@ const PlanEditor = ({
           )}
 
           {/* {debugPoints.map((pt, i) => (
-          <Circle key={`debug-${i}-${Math.round(pt.x)}-${Math.round(pt.y)}`} x={pt.x} y={pt.y} radius={5} fill="red" />
-        ))} */}
+            <Circle key={`debug-${i}-${Math.round(pt.x)}-${Math.round(pt.y)}`} x={pt.x} y={pt.y} radius={5} fill="red" />
+          ))} */}
 
           {elements
             .filter(el => el.type === 'door')

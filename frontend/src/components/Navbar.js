@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { FaUserCircle } from "react-icons/fa";
+import { FaUserCircle, FaList, FaSignOutAlt } from "react-icons/fa";
 import "../styles/Navbar.css";
 import Login from "./Login";
 import Register from "./Register";
@@ -25,7 +25,7 @@ const Navbar = () => {
         draggable: false,
         position: "top-center",
       });
-    
+
       localStorage.removeItem("logout_reason");
       localStorage.removeItem("user");
       setUser(null);
@@ -36,21 +36,21 @@ const Navbar = () => {
     const handleSessionExpiration = () => {
       const reason = localStorage.getItem("logout_reason");
       const userData = localStorage.getItem("user");
-  
+
       if (!userData || reason === "session_expired") {
-        setUser(null); 
+        setUser(null);
         localStorage.removeItem("logout_reason");
       }
     };
-  
+
     handleSessionExpiration();
     window.addEventListener("focus", handleSessionExpiration);
-  
+
     return () => {
       window.removeEventListener("focus", handleSessionExpiration);
     };
   }, []);
-  
+
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) {
@@ -134,14 +134,21 @@ const Navbar = () => {
 
             {isDropdownOpen && (
               <div className="dropdown-menu">
-                <button onClick={() => setIsLogoutConfirmOpen(true)}>Logout</button>
                 <button
                   onClick={() => {
                     setIsDropdownOpen(false);
                     navigate("/plans");
                   }}
                 >
-                  My Plans
+                  <span className="menu-label">My Plans</span>
+                  <FaList className="menu-icon-right" />
+                </button>
+                <button
+                  onClick={() => setIsLogoutConfirmOpen(true)}
+                  className="logout-button"
+                >
+                  <span className="menu-label">Logout</span>
+                  <FaSignOutAlt className="menu-icon-right" />
                 </button>
               </div>
             )}
