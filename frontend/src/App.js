@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
 import { ToastContainer } from 'react-toastify';
@@ -11,14 +11,27 @@ import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Login from "./components/Login";
 import MyPlans from "./pages/MyPlans";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
+  const [user, setUser] = useState(() => {
+    const stored = localStorage.getItem("user");
+    return stored ? JSON.parse(stored) : null;
+  });
+
   return (
     <Router>
-      <Navbar />
+      <Navbar user={user} setUser={setUser} />
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/plan" element={<Plan />} />
+        <Route
+          path="/plan"
+          element={
+            <ProtectedRoute setUser={setUser}>
+              <Plan />
+            </ProtectedRoute>
+          }
+        />
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/login" element={<Login />} />

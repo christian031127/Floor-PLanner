@@ -1,9 +1,11 @@
+// Home page
 import React, { useEffect, useState } from "react";
 import "../styles/Home.css";
 
 const Home = () => {
   const [scrollPercent, setScrollPercent] = useState(0);
 
+  // Scroll event handler to update the scroll percentage
   useEffect(() => {
     const handleScroll = () => {
       const scrollY = window.scrollY;
@@ -51,10 +53,10 @@ const Home = () => {
         </div>
       </div>
 
-      {/* Nagy CTA gomb az alján */}
+      {/* Big Button */}
       <div className="final-cta">
-        <h2>Tervezze meg saját otthonát most!</h2>
-        <a href="/plan" className="big-cta-button">Kezdje el a tervezést</a>
+        <h2>Start planning your dream home today</h2>
+        <a href="/plan" className="big-cta-button">Start Designing</a>
       </div>
     </div>
   );

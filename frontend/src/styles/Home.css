@@ -12,7 +12,6 @@ html {
     transition: background 0.3s ease-in-out;
 }
 
-/* Szekciók */
 .section {
     display: flex;
     align-items: center;
@@ -23,15 +22,6 @@ html {
     position: relative;
 }
 
-/* Mobilon egymás alatt legyenek */
-@media (max-width: 768px) {
-    .section {
-        flex-direction: column;
-        text-align: center;
-    }
-}
-
-/* Képek beállítása */
 .image-container {
     position: relative;
     width: 50%;
@@ -49,12 +39,12 @@ html {
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
 }
 
-/* Szövegek beállítása */
 .text-container h2 {
     font-size: 2rem;
     font-weight: 600;
     color: #222;
     font-family: "Poppins", sans-serif;
+    text-align: center;
 }
 
 .text-container p {
@@ -64,7 +54,6 @@ html {
     line-height: 1.6;
 }
 
-/* Balra és jobbra eltolás */
 .offset-left {
     transform: translateX(-40px);
     max-width: 100%;
@@ -79,12 +68,12 @@ html {
 
 /* Egyedi eltolások (Képek és szövegek) */
 .section:nth-child(1) .image-container .house-image {
-    /* 1. kép - marad */
+    /* 1. kép */
     transform: translateX(0px);
 }
 
 .section:nth-child(1) .text-container {
-    /* 1. szöveg - marad */
+    /* 1. szöveg */
     transform: translateX(0px);
 }
 
@@ -94,67 +83,52 @@ html {
 }
 
 .section:nth-child(2) .text-container {
-    /* 2. szöveg - mozgás a kép mellé */
+    /* 2. szöveg */
     transform: translateX(0px) translateY(-120px);
 }
 
 .section:nth-child(3) .image-container .house-image {
-    /* 3. kép - kicsit lejjebb */
+    /* 3. kép */
     transform: translateX(0px) translateY(-240px);
 }
 
 .section:nth-child(3) .text-container {
-    /* 3. szöveg - mozgás a kép mellé */
+    /* 3. szöveg */
     transform: translateX(0px) translateY(-240px);
 }
 
-/* Mobilnézetben ne legyen eltolás */
-@media (max-width: 768px) {
-
-    .house-image,
-    .text-container {
-        transform: translateX(0) translateY(0);
-    }
-}
-
-/* Nagy CTA gomb az alján */
+/* Big Button */
 .final-cta {
-    text-align: center;
-    margin-top: 50px;
-    padding: 40px;
-    background: linear-gradient(to right, #f39c12, #e67e22);
-    color: white;
-    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin-top: -220px;
+    margin-bottom: 20px;
 }
 
 .final-cta h2 {
     font-size: 2.5rem;
+    color: #222;
+    margin-bottom: 24px;
+    font-family: "Poppins", sans-serif;
+    font-weight: 600;
 }
 
 .big-cta-button {
     display: inline-block;
-    padding: 15px 30px;
-    font-size: 1.5rem;
-    background-color: #2c3e50;
+    padding: 16px 36px;
+    font-size: 1.25rem;
+    background-color: #4d4e4e;
     color: white;
     text-decoration: none;
-    border-radius: 8px;
-    margin-top: 20px;
-    transition: background 0.3s ease-in-out;
+    border-radius: 12px;
+    transition: background-color 0.3s ease-in-out, transform 0.2s;
+    font-family: "Poppins", sans-serif;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .big-cta-button:hover {
-    background-color: #1a252f;
-}
-
-/* Mobilbarát CTA */
-@media (max-width: 768px) {
-    .final-cta h2 {
-        font-size: 2rem;
-    }
-
-    .big-cta-button {
-        font-size: 1.2rem;
-        padding: 12px 25px;
-    }
+    background-color: #2f3031;
+    transform: translateY(-2px);
 }

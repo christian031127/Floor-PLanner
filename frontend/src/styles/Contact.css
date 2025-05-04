@@ -1,0 +1,46 @@
+/* Contact.css */
+.contact-container {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 80px;
+  margin-top: -100px;
+  gap: 40px;
+  background: linear-gradient(to bottom, rgba(245, 245, 220), rgba(210, 180, 140, 1));
+  min-height: 100vh;
+  font-family: "Poppins", sans-serif;
+  align-items: center;
+}
+
+.contact-map {
+  width: 50%;
+  height: 600px;
+  margin-top: 100px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.contact-details {
+  width: 45%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  font-size: 18px;
+  color: #222;
+}
+
+.contact-details h2 {
+  margin-bottom: 10px;
+  font-size: 1.8rem;
+  color: #2c3e50;
+}
+
+.contact-details div {
+  line-height: 1.6;
+  background: rgba(255, 255, 255, 0.7);
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}

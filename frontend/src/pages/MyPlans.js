@@ -4,7 +4,7 @@ import { getPlan, getPlans, deletePlan, updatePlan } from "../api/api";
 import { FaFolderOpen, FaEdit, FaTrash } from "react-icons/fa";
 import "../styles/MyPlans.css";
 import { useNavigate } from "react-router-dom";
-import {toast } from "react-toastify";
+import { toast } from "react-toastify";
 
 const MyPlans = () => {
   const [plans, setPlans] = useState([]);
@@ -17,18 +17,18 @@ const MyPlans = () => {
   const handleOpenPlan = async (id) => {
     try {
       const res = await getPlan(id);
-  
+
       const planData = {
         ...res,
-        id: res.id || res._id  
+        id: res.id || res._id
       };
-  
+
       navigate("/plan", { state: { planData } });
     } catch (err) {
       console.error("Terv betöltése sikertelen:", err);
     }
   };
-  
+
   useEffect(() => {
     const fetchPlans = async () => {
       try {
@@ -69,56 +69,58 @@ const MyPlans = () => {
   if (loading) return <p>Loading plans...</p>;
 
   return (
-    <div className="my-plans-page">
-      <h2>My Plans</h2>
-      {plans.length === 0 ? (
-        <p>You don't have any saved plans yet.</p>
-      ) : (
-        <div className="plans-list">
-          {plans.map((plan) => (
-            <div className="plan-card" key={plan.id}>
-              <div className="plan-name-section">
-                {editingId === plan.id ? (
-                  <input
-                    type="text"
-                    value={editedName}
-                    onChange={(e) => setEditedName(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        handleRename(plan.id, editedName);
-                      }
-                    }}
-                    onBlur={() => setEditingId(null)}
-                    autoFocus
-                  />
-                ) : (
-                  <h3>{plan.name}</h3>
-                )}
+    <div className="my-plans-wrapper">
+      <div className="my-plans-page">
+        <h2>My Plans</h2>
+        {plans.length === 0 ? (
+          <p>You don't have any saved plans yet.</p>
+        ) : (
+          <div className="plans-list">
+            {plans.map((plan) => (
+              <div className="plan-card" key={plan.id}>
+                <div className="plan-name-section">
+                  {editingId === plan.id ? (
+                    <input
+                      type="text"
+                      value={editedName}
+                      onChange={(e) => setEditedName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          handleRename(plan.id, editedName);
+                        }
+                      }}
+                      onBlur={() => setEditingId(null)}
+                      autoFocus
+                    />
+                  ) : (
+                    <h3>{plan.name}</h3>
+                  )}
+                </div>
+                <div className="plan-actions">
+                  <button className="blue" onClick={() => handleOpenPlan(plan.id)}><FaFolderOpen /></button>
+                  <button className="gray" onClick={() => {
+                    setEditingId(plan.id);
+                    setEditedName(plan.name);
+                  }}><FaEdit /></button>
+                  <button className="red" onClick={() => setDeleteConfirmId(plan.id)}><FaTrash /></button>
+                </div>
               </div>
-              <div className="plan-actions">
-                <button className="blue" onClick={() => handleOpenPlan(plan.id)}><FaFolderOpen /></button>
-                <button className="gray" onClick={() => {
-                  setEditingId(plan.id);
-                  setEditedName(plan.name);
-                }}><FaEdit /></button>
-                <button className="red" onClick={() => setDeleteConfirmId(plan.id)}><FaTrash /></button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
 
-      {deleteConfirmId && planToDelete && (
-        <div className="modal-overlay show">
-          <div className="modal slide-in">
-            <p>Are you sure you want to delete "{planToDelete.name}"?</p>
-            <div className="modal-buttons">
-              <button onClick={() => handleDelete(deleteConfirmId)}>Yes</button>
-              <button onClick={() => setDeleteConfirmId(null)}>No</button>
+        {deleteConfirmId && planToDelete && (
+          <div className="modal-overlay show">
+            <div className="modal slide-in">
+              <p>Are you sure you want to delete "{planToDelete.name}"?</p>
+              <div className="modal-buttons">
+                <button onClick={() => handleDelete(deleteConfirmId)}>Yes</button>
+                <button onClick={() => setDeleteConfirmId(null)}>No</button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };

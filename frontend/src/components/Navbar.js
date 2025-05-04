@@ -7,14 +7,29 @@ import Register from "./Register";
 import { logoutUser } from "../api/api"
 import { toast } from "react-toastify";
 
-const Navbar = () => {
+const Navbar = ({ user, setUser }) => {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isRegisterOpen, setIsRegisterOpen] = useState(false);
-  const [user, setUser] = useState(null);
+  //const [user, setUser] = useState(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
 
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const syncUser = () => {
+      const storedUser = localStorage.getItem("user");
+      setUser(storedUser ? JSON.parse(storedUser) : null);
+    };
+
+    window.addEventListener("storage", syncUser);
+    window.addEventListener("focus", syncUser);
+
+    return () => {
+      window.removeEventListener("storage", syncUser);
+      window.removeEventListener("focus", syncUser);
+    };
+  }, [setUser]);
 
   useEffect(() => {
     const reason = localStorage.getItem("logout_reason");
@@ -30,7 +45,7 @@ const Navbar = () => {
       localStorage.removeItem("user");
       setUser(null);
     }
-  }, []);
+  }, [setUser]);
 
   useEffect(() => {
     const handleSessionExpiration = () => {
@@ -49,7 +64,7 @@ const Navbar = () => {
     return () => {
       window.removeEventListener("focus", handleSessionExpiration);
     };
-  }, []);
+  }, [setUser]);
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -61,7 +76,7 @@ const Navbar = () => {
         localStorage.removeItem("user");
       }
     }
-  }, []);
+  }, [setUser]);
 
   useEffect(() => {
     const handleOutsideClick = (event) => {
@@ -101,12 +116,12 @@ const Navbar = () => {
     }
   };
 
-  const handlePlanClick = (e) => {
-    if (!user) {
-      e.preventDefault();
-      setIsLoginOpen(true);
-    }
-  };
+  // const handlePlanClick = (e) => {
+  //   if (!user) {
+  //     e.preventDefault();
+  //     setIsLoginOpen(true);
+  //   }
+  // };
 
   return (
     <nav className="navbar">
@@ -116,7 +131,8 @@ const Navbar = () => {
 
       <div className="nav-center">
         <Link to="/">Home</Link>
-        <Link to="/plan" onClick={handlePlanClick}>Plan</Link>
+        {/* <Link to="/plan" onClick={handlePlanClick}>Plan</Link> */}
+        <Link to="/plan">Plan</Link>
         <Link to="/about">About Us</Link>
         <Link to="/contact">Contact</Link>
       </div>

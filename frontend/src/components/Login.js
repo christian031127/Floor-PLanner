@@ -7,7 +7,7 @@ const Login = ({ isOpen, onClose, switchToRegister, setUser, setIsDropdownOpen }
   const [isClosing, setIsClosing] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  
+
 
   useEffect(() => {
     if (isOpen) {
@@ -21,6 +21,10 @@ const Login = ({ isOpen, onClose, switchToRegister, setUser, setIsDropdownOpen }
         document.body.classList.remove("modal-open");
       }, 500);
     }
+
+    return () => {
+      document.body.classList.remove("modal-open");
+    };
   }, [isOpen]);
 
   const handleClose = () => {
